@@ -386,6 +386,17 @@ class ProvinceMembrane(Membrane):
                       self.common_areas + self.hospitals + self.ICUs + self.houses):
             place.reduce_vaccine_day()
 
+
+    #aAGGIUNTO
+    def decay_all_vaccine_effectiveness(self):
+        """
+        Apply vaccine effectiveness halving across all places in the province.
+        Delegates to decay_vaccine_effectiveness() on each PlaceMembrane.
+        """
+        for place in (self.schools + self.workplaces + self.leisure_centers +
+                      self.common_areas + self.hospitals + self.ICUs + self.houses):
+            place.decay_vaccine_effectiveness()
+
     def update_all_status(self):
         """
         Update the infection status of all individuals in the province.
@@ -569,6 +580,17 @@ class PlaceMembrane(Membrane):
                 individual.vaccination_days_left -= 1
             if individual.vaccination_days_left == 0:
                 individual.vaccinated = False
+
+    #AGGIUNTO
+    def decay_vaccine_effectiveness(self):
+        """
+        Halve vaccine effectiveness for all vaccinated individuals in this place.
+        Intended to be called every 60 simulation days.
+        """
+        for individual in self.individuals_inside:
+            if individual.vaccinated and individual.vaccine_effectiveness > 0:
+                individual.vaccine_effectiveness /= 2
+                
 
     def update_status(self):
         """
