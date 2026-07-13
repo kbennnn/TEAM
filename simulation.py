@@ -346,6 +346,11 @@ class Simulation:
                             p.reduce_all_vaccine_day()   # Update vaccine effectiveness
                         else:
                             p.trigger_infection_progress()  # Simple state progression
+
+                        #AGGIUNTO
+                        if day % 60 == 0:                    # ogni 60 giorni...
+                            p.decay_all_vaccine_effectiveness()  # ...dimezza l'efficacia
+                            
                 else:
                     # First day initialization and reporting
                     print("prudence parameter of", InfectionRules.PRUDENCE_PARAMETER,
