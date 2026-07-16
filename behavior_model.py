@@ -104,7 +104,7 @@ class BehaviorModel:
         vaccine_effectiveness = random.uniform(
             BehaviorModel.VACCINE_EFFECTIVENESS_LOWER_BOUND,
             BehaviorModel.VACCINE_EFFECTIVENESS_UPPER_BOUND
-        )
+        ) / 100
 
         # Mean duration set to 180 days
         mean_duration = 180
