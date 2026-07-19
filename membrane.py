@@ -12,7 +12,7 @@ This serves as the base class for more specialized membrane types.
 
 class Membrane:
     # Define provinces as class attributes for consistent reference across all instances
-    NUM_OF_PROV = 12
+    NUM_OF_PROV = 3
     PROVINCES = [f"PV_{i+1}" for i in range(NUM_OF_PROV)]
 
     @classmethod
@@ -99,7 +99,7 @@ class ProvinceMembrane(Membrane):
         self.ICUs = ICUs if ICUs else []
 
 
-        #ADDED: cache parameters
+        # Cache parameters
         self._cached_infected = 0
         self._cached_population = 0
 
@@ -245,7 +245,7 @@ class ProvinceMembrane(Membrane):
             self.houses.append(mem_to_add)
 
 
-    #ADDED: updates cache parameters
+    # Updates cache parameters
     def update_cache(self):
         all_places = (self.schools + self.workplaces + self.leisure_centers +
                   self.common_areas + self.hospitals + self.ICUs + self.houses)
@@ -261,14 +261,8 @@ class ProvinceMembrane(Membrane):
         Returns:
             int: Total number of infected individuals
         """
-        
-        #old code:
-        #return sum(place.get_total_infected() for place in
-                   #self.schools + self.workplaces + self.leisure_centers +
-                   #self.common_areas + self.hospitals + self.ICUs + self.houses)
 
-  
-        return self._cached_infected  # NEW CODE: uses cache value
+        return self._cached_infected  #uses cache value
 
 
 
@@ -302,13 +296,8 @@ class ProvinceMembrane(Membrane):
         Returns:
             int: Total population of the province
         """
-        #old code:
-        #return sum(place.get_total_individuals() for place in
-                   #self.schools + self.workplaces + self.leisure_centers +
-                   #self.common_areas + self.hospitals + self.ICUs + self.houses)
 
-
-        return self._cached_population  # NEW CODE: uses cache value
+        return self._cached_population  #uses cache value
 
 
 
@@ -385,17 +374,6 @@ class ProvinceMembrane(Membrane):
         for place in (self.schools + self.workplaces + self.leisure_centers +
                       self.common_areas + self.hospitals + self.ICUs + self.houses):
             place.reduce_vaccine_day()
-
-
-    #aAGGIUNTO
-    def decay_all_vaccine_effectiveness(self):
-        """
-        Apply vaccine effectiveness halving across all places in the province.
-        Delegates to decay_vaccine_effectiveness() on each PlaceMembrane.
-        """
-        for place in (self.schools + self.workplaces + self.leisure_centers +
-                      self.common_areas + self.hospitals + self.ICUs + self.houses):
-            place.decay_vaccine_effectiveness()
 
     def update_all_status(self):
         """
@@ -581,17 +559,6 @@ class PlaceMembrane(Membrane):
             if individual.vaccination_days_left == 0:
                 individual.vaccinated = False
 
-    #AGGIUNTO
-    def decay_vaccine_effectiveness(self):
-        """
-        Halve vaccine effectiveness for all vaccinated individuals in this place.
-        Intended to be called every 60 simulation days.
-        """
-        for individual in self.individuals_inside:
-            if individual.vaccinated and individual.vaccine_effectiveness > 0:
-                individual.vaccine_effectiveness /= 2
-                
-
     def update_status(self):
         """
         Update individual status based on viral load or remove deceased.
@@ -724,7 +691,7 @@ class LeisureCenterMembrane(PlaceMembrane):
         else:
             infection_rate = 0.06  # Late night hours
 
-        InfectionRules.infect_individuals(
+        return InfectionRules.infect_individuals(
             self.get_young_individuals(),
             infection_rate,
             self.get_total_infected(),
@@ -748,7 +715,7 @@ class LeisureCenterMembrane(PlaceMembrane):
         else:
             infection_rate = 0.06  # Late night hours
 
-        InfectionRules.infect_individuals(
+        return InfectionRules.infect_individuals(
             self.get_adult_individuals(),
             infection_rate,
             self.get_total_infected(),
@@ -763,7 +730,7 @@ class LeisureCenterMembrane(PlaceMembrane):
         Note:
             Higher base infection rate (0.08) compared to young/adult groups
         """
-        InfectionRules.infect_individuals(
+        return InfectionRules.infect_individuals(
             self.get_elderly_individuals(),
             0.08,  # Higher rate for elderly
             self.get_total_infected(),
@@ -794,7 +761,7 @@ class WorkPlaceMembrane(PlaceMembrane):
         Note:
             Uses a moderate infection rate of 0.02
         """
-        InfectionRules.infect_individuals(
+        return InfectionRules.infect_individuals(
             self.get_adult_individuals(),
             0.02,  # Moderate rate for workplace setting
             self.get_total_infected(),
@@ -827,7 +794,7 @@ class HospitalMembrane(PlaceMembrane):
         Note:
             Uses higher infection rate (0.05) due to hospital environment
         """
-        InfectionRules.infect_individuals(
+        return InfectionRules.infect_individuals(
             self.get_young_individuals(),
             0.05,  # Higher due to hospital setting
             self.get_total_infected(),
@@ -842,7 +809,7 @@ class HospitalMembrane(PlaceMembrane):
         Note:
             Uses higher infection rate (0.05) due to hospital environment
         """
-        InfectionRules.infect_individuals(
+        return InfectionRules.infect_individuals(
             self.get_adult_individuals(),
             0.05,  # Higher due to hospital setting
             self.get_total_infected(),
@@ -858,7 +825,7 @@ class HospitalMembrane(PlaceMembrane):
             Uses much higher infection rate (0.5) due to hospital environment
             and elderly vulnerability
         """
-        InfectionRules.infect_individuals(
+        return InfectionRules.infect_individuals(
             self.get_elderly_individuals(),
             0.5,  # Significantly higher for elderly in hospital
             self.get_total_infected(),
@@ -889,7 +856,7 @@ class SchoolMembrane(PlaceMembrane):
         Note:
             Uses moderate infection rate (0.03) reflecting school environment
         """
-        InfectionRules.infect_individuals(
+        return InfectionRules.infect_individuals(
             self.get_young_individuals(),
             0.03,  # Moderate rate for school setting
             self.get_total_infected(),
@@ -922,7 +889,7 @@ class CommonAreaMembrane(PlaceMembrane):
         Note:
             Uses lower infection rate (0.02) reflecting lower vulnerability
         """
-        InfectionRules.infect_individuals(
+        return InfectionRules.infect_individuals(
             self.get_young_individuals(),
             0.02,  # Lower rate for young in common areas
             self.get_total_infected(),
@@ -937,7 +904,7 @@ class CommonAreaMembrane(PlaceMembrane):
         Note:
             Uses lower infection rate (0.02) reflecting standard vulnerability
         """
-        InfectionRules.infect_individuals(
+        return InfectionRules.infect_individuals(
             self.get_adult_individuals(),
             0.02,  # Standard rate for adults in common areas
             self.get_total_infected(),
@@ -949,7 +916,7 @@ class CommonAreaMembrane(PlaceMembrane):
         Simulate infection spread among elderly individuals in common areas.
         Uses a 20% infection probability factor due to higher vulnerability.
         """
-        InfectionRules.infect_individuals(self.get_elderly_individuals(), 0.2,
+        return InfectionRules.infect_individuals(self.get_elderly_individuals(), 0.2,
                                           self.get_total_infected(),
                                           len(self.individuals_inside),
                                           ProvinceMembrane.get_province_membrane_by_label(self.province))
@@ -977,7 +944,7 @@ class ICUMembrane(PlaceMembrane):
         Simulate infection spread among young individuals in ICU.
         Uses a lower 5% infection probability due to typically stronger immune systems.
         """
-        InfectionRules.infect_individuals(self.get_young_individuals(), 0.05,
+        return InfectionRules.infect_individuals(self.get_young_individuals(), 0.05,
                                           self.get_total_infected(),
                                           len(self.individuals_inside),
                                           ProvinceMembrane.get_province_membrane_by_label(self.province))
@@ -987,7 +954,7 @@ class ICUMembrane(PlaceMembrane):
          Simulate infection spread among adult individuals in ICU.
          Uses a 5% infection probability factor reflecting standard ICU protocols.
          """
-        InfectionRules.infect_individuals(self.get_adult_individuals(), 0.05,
+        return InfectionRules.infect_individuals(self.get_adult_individuals(), 0.05,
                                           self.get_total_infected(),
                                           len(self.individuals_inside),
                                           ProvinceMembrane.get_province_membrane_by_label(self.province))
@@ -998,7 +965,7 @@ class ICUMembrane(PlaceMembrane):
         Uses a high 50% infection probability factor reflecting age-related vulnerability
         and potential comorbidities despite ICU protocols.
         """
-        InfectionRules.infect_individuals(self.get_elderly_individuals(), 0.5,
+        return InfectionRules.infect_individuals(self.get_elderly_individuals(), 0.5,
                                           self.get_total_infected(),
                                           len(self.individuals_inside),
                                           ProvinceMembrane.get_province_membrane_by_label(self.province))
@@ -1132,8 +1099,8 @@ class Individual:
         self.vaccinated = vaccinated
         self.vaccination_information = vaccination_information
 
-        if self.vaccinated:
-            self.vaccine_effectiveness, self.vaccination_days_left = BehaviorModel.assign_vaccine_effectiveness_with_duration()
+        #if self.vaccinated:
+        self.vaccine_effectiveness, self.vaccination_days_left = BehaviorModel.assign_vaccine_effectiveness_with_duration()
 
     def assign_to_house(self, house):
         """
