@@ -9,7 +9,7 @@ def main():
     print("Starting the simulation from colab_main")
 
 
-    simulation.run_simulation(days=50)
+    simulation.run_simulation(days=50, GPU_idx=0)
 
 if __name__ == "__main__":
     main()

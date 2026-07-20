@@ -576,7 +576,7 @@ class Simulation:
         # Generate visualization graphs from simulation data
         data = pd.read_csv(csv_filename)
 
-        # Create weekly aggregated CSV
+        #----Create weekly aggregated CSV and graphs
         weekly_data = data.iloc[:len(data) - len(data) % 7].copy()
         weekly_data["Week"] = (
             weekly_data["Day"] // 7
@@ -607,6 +607,23 @@ class Simulation:
             index=False
         )
         print("Weekly results saved to:", weekly_csv_filename)
+
+        # Load weekly data for plotting
+        weekly_plot_data = pd.read_csv(weekly_csv_filename)
+
+        # Calculate percentages
+        weekly_plot_data["Prevalence (%)"] = (
+            weekly_plot_data["Prevalence"] / self.TOTAL_POPULATION
+        ) * 100
+
+        weekly_plot_data["Variation of Infected (%)"] = (
+            weekly_plot_data["Variation of Infected"] / self.TOTAL_POPULATION
+        ) * 100
+
+        weekly_plot_data["Deaths (%)"] = (
+            weekly_plot_data["Deaths"] / self.TOTAL_POPULATION
+        ) * 100
+        #----
 
 
         output_dir = os.path.join(os.path.dirname(csv_filename), "graphs")
@@ -666,6 +683,18 @@ class Simulation:
             y_label="Deaths (%)",
             base_filename="deaths_line_chart",
             color="green"
+        )
+
+
+        # Line Chart 4: Week vs Incidence
+        create_line_chart(
+            x=weekly_plot_data["Week"],
+            y=weekly_plot_data["Variation of Infected (%)"],
+            title="Weekly Incidence (%)",
+            x_label="Weeks",
+            y_label="Incidence (%)",
+            base_filename="weekly_incidence_line_chart",
+            color="blue"
         )
 
 
