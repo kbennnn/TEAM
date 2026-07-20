@@ -573,6 +573,40 @@ class Simulation:
         print("Simulation results saved to:", csv_filename)
         # Generate visualization graphs from simulation data
         data = pd.read_csv(csv_filename)
+
+        # Create weekly aggregated CSV
+        weekly_data = data.iloc[:len(data) - len(data) % 7].copy()
+        weekly_data["Week"] = (
+            weekly_data["Day"] // 7
+        )
+
+        weekly_data = weekly_data.groupby("Week").agg({
+            "Variation of Infected": "sum",
+            "Prevalence": "mean",
+            "Deaths": "last",
+            "Seconds": "sum",
+            "classS": "mean",
+            "classE": "mean",
+            "classI": "mean",
+            "classT3": "mean",
+            "classT4": "mean",
+            "classR": "mean"
+        }).reset_index()
+
+        weekly_data["Week"] = weekly_data["Week"] + 1
+
+        weekly_csv_filename = csv_filename.replace(
+            ".csv",
+            "_weekly.csv"
+        )
+
+        weekly_data.to_csv(
+            weekly_csv_filename,
+            index=False
+        )
+        print("Weekly results saved to:", weekly_csv_filename)
+
+
         output_dir = os.path.join(os.path.dirname(csv_filename), "graphs")
         os.makedirs(output_dir, exist_ok=True)  # Creates folder if does not exist
 

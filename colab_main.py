@@ -9,7 +9,7 @@ def main():
     print("Starting the simulation from colab_main")
 
 
-    simulation.run_simulation(days=10)
+    simulation.run_simulation(days=50)
 
 if __name__ == "__main__":
     main()
