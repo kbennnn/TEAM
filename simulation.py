@@ -76,11 +76,11 @@ class Simulation:
 
     # Class constants and default parameters
     PROVINCES = Membrane.PROVINCES
-    TOTAL_POPULATION = 25000
-    VACCINE_COVERAGE = 0.2 #MODIFICATO
-    INIT_INFECTIONS_PER_PROVINCE = 83 #MODIFICATO
-    YOUNG_PERCENTAGE = 0.2  # Population aged 0-20 years #MODIFICATO
-    ELDERLY_PERCENTAGE = 0.3  # Population aged 60+ years #MODIFICATO
+    TOTAL_POPULATION = 10000
+    VACCINE_COVERAGE = 0
+    INIT_INFECTIONS_PER_PROVINCE = 10
+    YOUNG_PERCENTAGE = 0.15  # Population aged 0-20 years
+    ELDERLY_PERCENTAGE = 0.32  # Population aged 60+ years
     ADULT_PERCENTAGE = 1 - YOUNG_PERCENTAGE - ELDERLY_PERCENTAGE  # Population aged 21-59 years
     GET_HOME_18 = 0.2  # Probability of students returning home at 18:00
     GET_HOME_19 = 0.48  # Probability of students returning home at 19:00
@@ -116,6 +116,7 @@ class Simulation:
         self.currently_infected = set()
         self.yesterday_infected = 0
         self.new_daily_cases = []
+        self.incidence = []
         self.prevalence = []
         self.deaths = []
 
@@ -239,7 +240,7 @@ class Simulation:
             destination = get_destination_province(province.label)
             if InfectionRules.VIRAL_LOAD:
                 individual = Individual(province_origin=province.label, province_destination=destination,
-                                        number=i, status="Healthy", age_group="young", v1=0, v1_ino=0, antiv=1000, antivesp=0,
+                                        number=i, status="Healthy", age_group="young", vaccinated=True, v1=0, v1_ino=0, antiv=1000, antivesp=0,
                                         phag=5, inf=0, symptoms = "E1")
             else:
                 individual = Individual(province_origin=province.label, province_destination=destination,
@@ -292,7 +293,7 @@ class Simulation:
                     infected_individuals.add(individual)
                     available_individuals.remove(individual)
 
-    def run_simulation(self, days=7, hours_per_day=24):
+    def run_simulation(self, GPU_idx, days=7, hours_per_day=24):
         """
         Execute the complete simulation for the specified duration.
 
@@ -315,7 +316,7 @@ class Simulation:
         os.makedirs(directory, exist_ok=True)
         # Create filename with descriptive parameters
         csv_filename = (
-            f"{directory}/simulation_{self.TOTAL_POPULATION}_{len(self.PROVINCES)}_{days}___"
+            f"{directory}/simulation_{self.TOTAL_POPULATION}_{len(self.PROVINCES)}_{days}_{GPU_idx}___"
             f"{current_datetime}.csv"
         )
         # Initialize the CSV file with headers
@@ -330,6 +331,7 @@ class Simulation:
             workers = []           # Working adults
 
 
+            self.incidence = [0] * (days + 1)
             # Main simulation loop - days
             for day in range(1, days + 1):
                 print("--- Day:", day, "---")
@@ -361,7 +363,7 @@ class Simulation:
                 # Main simulation loop - hours within day
                 for hour in range(1, hours_per_day + 1):
 
-                    # ADDED: updates cache every hour
+                    # Updates cache every hour
                     for p in self.provinces:
                         p.update_cache()
 
@@ -387,13 +389,13 @@ class Simulation:
                             self.students_to_destination_prov()
                             self.get_to_workplace()  # workers to workplaces
                         if hour == 8:
-                            self.workplace_infections()  # infections in workplaces
+                            self.workplace_infections(day)  # infections in workplaces
                             self.get_to_school()  # Students to schools
                             elderly_outside.extend(self.elderly_to_destination_prov())
                         if 9 <= hour < 17:
                             self.trigger_vaccination_progress(self.VACCINE_COVERAGE)
-                            self.workplace_infections()  # infections in workplaces
-                            self.school_infections()  # Infections in schools
+                            self.workplace_infections(day)  # infections in workplaces
+                            self.school_infections(day)  # Infections in schools
                             elderly_outside.extend(self.elderly_to_destination_prov())
                             self.get_to_leisure_elderly(0.04)
                             self.get_back_home_elderly(elderly_outside)
@@ -513,7 +515,7 @@ class Simulation:
 
 
                 self.track_infections()
-                if self.new_daily_cases[day - 1] == 0:
+                if self.incidence[day] == 0:
                     print("No new infections.")
 
                 # Existing end-of-day processing follows:
@@ -525,7 +527,7 @@ class Simulation:
                 elapsed_time = round(elapsed_time, 2)
 
                 # Report daily statistics
-                print("Variation of Infected:", self.new_daily_cases[day - 1])
+                print("Variation of Infected:", self.incidence[day])
                 print("Prevalence:", self.prevalence[day - 1])
                 print("Deaths:", len(self.deaths))
                 print("Seconds:", elapsed_time)
@@ -554,7 +556,7 @@ class Simulation:
                 print("SEJIRS class: ", class_S, class_E, class_I, class_J3, class_J4, class_R)
                 # Write daily data to CSV
                 csv_writer.writerow(
-                    [day, self.new_daily_cases[day - 1],
+                    [day, self.incidence[day],
                      self.prevalence[day - 1], len(self.deaths), elapsed_time, class_S, class_E, class_I, class_J3, class_J4, class_R]
                 )
 
@@ -562,7 +564,7 @@ class Simulation:
                 if self.on_day_completed:
                     self.on_day_completed(
                         day,
-                        self.new_daily_cases[day - 1],
+                        self.incidence[day],
                         self.prevalence[day - 1],
                         len(self.deaths),
                         elapsed_time
@@ -1053,14 +1055,14 @@ class Simulation:
                         all_list.append(individual)
         return all_list
 
-    def school_infections(self):
+    def school_infections(self, day):
         """
         Simulate infections in schools.
 
         """
         for province in self.provinces:
             for school in province.schools:
-                school.infect_young_school()
+                self.incidence[day] += school.infect_young_school()
 
     def common_area_infections(self, day, hour):
         """
@@ -1070,18 +1072,18 @@ class Simulation:
         if (7 < hour < 22) or ((1 <= day % 7 <= 5) and (5 < hour < 8)):
             for province in self.provinces:
                 for common_area in province.common_areas:
-                    common_area.infect_young_ca()
-                    common_area.infect_adult_ca()
-                    common_area.infect_elderly_ca()
+                    self.incidence[day] += common_area.infect_young_ca()
+                    self.incidence[day] += common_area.infect_adult_ca()
+                    self.incidence[day] += common_area.infect_elderly_ca()
 
-    def workplace_infections(self):
+    def workplace_infections(self, day):
         """
         Simulate infections in workplaces.
 
         """
         for province in self.provinces:
             for workplace in province.workplaces:
-                workplace.infect_adult_workplace()
+                self.incidence[day] += workplace.infect_adult_workplace()
 
     def house_infections(self, day, hour): #OLD house infection
         """
@@ -1090,12 +1092,11 @@ class Simulation:
         if ((1 <= day % 7 <= 5) and (8 <= hour <= 18)) or (1 <= hour <= 6) or (hour % 2 == 1): #weekday and between 8 and 19, or night, or odd hour
             return
         else:
-            number_of_infected = 0
             for province in self.provinces:
                 for house in province.houses:
-                    number_of_infected += house.infect_young_house()
-                    number_of_infected += house.infect_adult_house()
-                    number_of_infected += house.infect_elderly_house()
+                    self.incidence[day] += house.infect_young_house()
+                    self.incidence[day] += house.infect_adult_house()
+                    self.incidence[day] += house.infect_elderly_house()
 
 
     def leisure_infections(self, day, hour):
@@ -1115,17 +1116,17 @@ class Simulation:
                 if 1 <= day % 7 <= 5:
                     #settimana
                     if 9 <= hour <= 21:
-                        leisure_center.infect_elderly_lc()
+                        self.incidence[day] += leisure_center.infect_elderly_lc()
                     if 21 <= hour <= 24:
-                        leisure_center.infect_young_lc(hour)
-                        leisure_center.infect_adult_lc(hour)
+                        self.incidence[day] += leisure_center.infect_young_lc(hour)
+                        self.incidence[day] += leisure_center.infect_adult_lc(hour)
                 else:
                     #weekend
                     if 9 <= hour <= 16:
-                        leisure_center.infect_elderly_lc()
+                        self.incidence[day] += leisure_center.infect_elderly_lc()
                     if (1 <= hour <= 3) or (9 <= hour <= 11) or (16 <= hour <= 18) or (22 <= hour <= 24):
-                        leisure_center.infect_young_lc(hour)
-                        leisure_center.infect_adult_lc(hour)
+                        self.incidence[day] += leisure_center.infect_young_lc(hour)
+                        self.incidence[day] += leisure_center.infect_adult_lc(hour)
 
     # TRACKING METHODS
     def track_infections(self):
