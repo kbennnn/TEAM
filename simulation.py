@@ -697,6 +697,8 @@ class Simulation:
             color="blue"
         )
 
+        return weekly_csv_filename
+
 
     def students_to_destination_prov(self):
         """
