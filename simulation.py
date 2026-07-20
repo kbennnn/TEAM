@@ -75,6 +75,7 @@ class Simulation:
         cls.PROVINCES = new_provinces.copy()  # Make a copy to avoid reference issues
 
     # Class constants and default parameters
+    HIDE_PRINT = True
     PROVINCES = Membrane.PROVINCES
     TOTAL_POPULATION = 10000
     VACCINE_COVERAGE = 0
@@ -334,7 +335,8 @@ class Simulation:
             self.incidence = [0] * (days + 1)
             # Main simulation loop - days
             for day in range(1, days + 1):
-                print("--- Day:", day, "---")
+                if not self.HIDE_PRINT:
+                    print("--- Day:", day, "---")
                 start_time = time.time()
 
                 # Check if today is a quarantine day
@@ -515,7 +517,7 @@ class Simulation:
 
 
                 self.track_infections()
-                if self.incidence[day] == 0:
+                if self.incidence[day] == 0 and not self.HIDE_PRINT:
                     print("No new infections.")
 
                 # Existing end-of-day processing follows:
@@ -527,10 +529,11 @@ class Simulation:
                 elapsed_time = round(elapsed_time, 2)
 
                 # Report daily statistics
-                print("Variation of Infected:", self.incidence[day])
-                print("Prevalence:", self.prevalence[day - 1])
-                print("Deaths:", len(self.deaths))
-                print("Seconds:", elapsed_time)
+                if not self.HIDE_PRINT:
+                    print("Variation of Infected:", self.incidence[day])
+                    print("Prevalence:", self.prevalence[day - 1])
+                    print("Deaths:", len(self.deaths))
+                    print("Seconds:", elapsed_time)
 
                 # Calculate SEJIRS model class populations
                 class_S = 0  # Susceptible
@@ -553,7 +556,8 @@ class Simulation:
                         class_I += 1
                     elif individual.status == "Recovered":
                         class_R += 1
-                print("SEJIRS class: ", class_S, class_E, class_I, class_J3, class_J4, class_R)
+                if not self.HIDE_PRINT:
+                    print("SEJIRS class: ", class_S, class_E, class_I, class_J3, class_J4, class_R)
                 # Write daily data to CSV
                 csv_writer.writerow(
                     [day, self.incidence[day],
@@ -594,6 +598,10 @@ class Simulation:
             "classT4": "mean",
             "classR": "mean"
         }).reset_index()
+
+        weekly_data["Variation of Infected (%)"] = (
+            weekly_data["Variation of Infected"] / self.TOTAL_POPULATION
+        ) * 100
 
         weekly_data["Week"] = weekly_data["Week"] + 1
 

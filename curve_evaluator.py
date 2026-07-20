@@ -12,7 +12,7 @@ class CurveEvaluator:
         """evalulate the simulation with a score"""
         simulation = pd.read_csv(simulation_csv)
 
-        sim = simulation["Variation of Infected"].to_numpy()
+        sim = simulation["Variation of Infected (%)"].to_numpy()
         real = self.target["incidenza"].to_numpy()
 
         n = min(len(sim), len(real))

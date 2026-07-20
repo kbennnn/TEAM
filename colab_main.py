@@ -10,7 +10,7 @@ def main():
     print("Starting the simulation from colab_main")
 
 
-    weekly_csv = simulation.run_simulation(days=50, GPU_idx=0)
+    weekly_csv = simulation.run_simulation(days=100, GPU_idx=0)
 
     evaluator = CurveEvaluator("lombardy/incidenza_ILI_2025-2026.csv")
 
