@@ -335,6 +335,8 @@ class Simulation:
             self.incidence = [0] * (days + 1)
             # Main simulation loop - days
             for day in range(1, days + 1):
+                if day % 50 == 0:
+                    print("--- Day:", day, "---")
                 if not self.HIDE_PRINT:
                     print("--- Day:", day, "---")
                 start_time = time.time()
@@ -354,6 +356,7 @@ class Simulation:
                     # First day initialization and reporting
                     print("prudence parameter of", InfectionRules.PRUDENCE_PARAMETER,
                           " i have a factor of * ", (1 - InfectionRules.PRUDENCE_PARAMETER)**2)
+                    print("numero di infetti iniziali per provincia:", self.INIT_INFECTIONS_PER_PROVINCE)
                     self.currently_infected = self.get_infected_individuals()
                     self.yesterday_infected = len(self.currently_infected)
 

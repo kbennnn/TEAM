@@ -1,12 +1,19 @@
 from simulation import Simulation
+from parameters import Parameters
 from curve_evaluator import CurveEvaluator
-
+from math import random
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import os
 
 def run_one_sim(idx, days):
     t0 = time.time()
+    
+    # parameters object
+    params = Parameters()
+    params.init_infection_per_province = random.randint(1,100)
+    params.apply() # use PARAMETER_BOUNDS for handle random changes
+
     # ogni processo crea la propria istanza
     sim = Simulation()
     sim.create_scenario()

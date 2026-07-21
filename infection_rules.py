@@ -50,6 +50,22 @@ class InfectionRules:
         cls.INCUBATION_PERIOD = new_value
 
     @classmethod
+    def update_hospitalization_period(cls, new_value: int):
+        cls.HOSPITALIZATION_PERIOD = new_value
+
+    @classmethod
+    def update_hospitalization_prob(cls, new_value: int):
+        cls.HOSPITALIZATION_PROB = new_value
+
+    @classmethod
+    def update_icu_prob(cls, new_value: int):
+        cls.ICU_PROB = new_value
+
+    @classmethod
+    def update_incubation_period(cls, new_value: int):
+        cls.INCUBATION_PERIOD = new_value
+
+    @classmethod
     def update_caution_factor(cls, new_value: float):
         cls.CAUTION_FACTOR = new_value
 
@@ -72,6 +88,18 @@ class InfectionRules:
     @classmethod
     def update_ICU_presence(cls, new_value: bool):
         cls.ICU_PRESENCE = new_value
+
+    @classmethod
+    def update_v1_growth_prob(cls, new_value: bool):
+        cls.V1_GROWTH_PROB = new_value
+
+    @classmethod
+    def update_antiv_kill_prob(cls, new_value: bool):
+        cls.ANTIV_KILL_PROB = new_value
+
+    @classmethod
+    def update_infection_reduction_factor(cls, new_value: bool):
+        cls.INFECTION_REDUCTION_FACTOR = new_value
 
     @staticmethod
     def infect_individuals(individuals, infection_rate, number_of_infected, total_in_membrane, province_membrane):

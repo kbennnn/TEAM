@@ -29,6 +29,16 @@ class BehaviorModel:
         """Update reference infection rate threshold."""
         cls.F_STAR = new_value
 
+    @classmethod
+    def update_vaccine_effectiveness_lower_bound(cls, new_value: float):
+        """Update reference infection rate threshold."""
+        cls.VACCINE_EFFECTIVENESS_LOWER_BOUND = new_value
+
+    @classmethod
+    def update_vaccine_effectiveness_upper_bound(cls, new_value: float):
+        """Update reference infection rate threshold."""
+        cls.VACCINE_EFFECTIVENESS_UPPER_BOUND = new_value
+
     @staticmethod
     def caution_factor(M, N, a):
         """
