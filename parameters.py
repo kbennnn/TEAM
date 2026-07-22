@@ -1,7 +1,8 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from simulation import Simulation
 from infection_rules import InfectionRules
 from behavior_model import BehaviorModel
+import os, csv
 
 
 @dataclass
@@ -116,6 +117,28 @@ class Parameters:
         BehaviorModel.update_f_star(
             self.f_star
         )
+
+
+    def save_result(self, simulation_csv: str, score: float):
+        result_file = "curve_score"
+
+        simulation_name = os.path.basename(simulation_csv) #extract the name of the simulation
+
+        row = {
+            "simulation": simulation_name,
+            **asdict(self),        # add all parameters
+            "score": score
+        }
+
+        file_exists = os.path.exists(result_file)
+
+        with open(result_file, "a", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=row.keys())
+
+            if not file_exists:
+                writer.writeheader()
+
+            writer.writerow(row)
 
 
 PARAMETER_BOUNDS = {

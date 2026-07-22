@@ -1,7 +1,7 @@
 from simulation import Simulation
 from parameters import Parameters
 from curve_evaluator import CurveEvaluator
-from math import random
+import random
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import os
@@ -22,6 +22,8 @@ def run_one_sim(idx, days):
     evaluator = CurveEvaluator("lombardy/incidenza_ILI_2025-2026.csv")
     score = evaluator.evaluate(weekly_csv)
 
+    params.save_result(weekly_csv, score) #save parameters and their results
+
     elapsed = time.time() - t0
     return idx, score, elapsed, os.getpid()
 
@@ -40,4 +42,4 @@ def main(n_runs, days, max_workers):
     return results
 
 if __name__ == "__main__":
-    main(n_runs=10, days=200, max_workers=10)
+    main(n_runs=3, days=200, max_workers=3)
