@@ -79,7 +79,7 @@ class Simulation:
     PROVINCES = Membrane.PROVINCES
     TOTAL_POPULATION = 10000
     VACCINE_COVERAGE = 0.2 #MODIFICATO
-    INIT_INFECTIONS_PER_PROVINCE = int(TOTAL_POPULATION/len(PROVINCES)*3/100) #MODIFICATO
+    INIT_INFECTIONS_PER_PROVINCE = int(TOTAL_POPULATION/len(PROVINCES)*0.3/100) #MODIFICATO
     YOUNG_PERCENTAGE = 0.2  # Population aged 0-20 years #MODIFICATO
     ELDERLY_PERCENTAGE = 0.3  # Population aged 60+ years #MODIFICATO
     
@@ -363,7 +363,7 @@ class Simulation:
                     # First day initialization and reporting
                     #print("prudence parameter of", InfectionRules.PRUDENCE_PARAMETER,
                     #      " i have a factor of * ", (1 - InfectionRules.PRUDENCE_PARAMETER)**2)
-                    print("con", len(self.PROVINCES) ," provincie e ", self.TOTAL_POPULATION ," di popolazione ho numero di infetti iniziali per provincia di ", self.INIT_INFECTIONS_PER_PROVINCE, " -> 3%")
+                    print("con", len(self.PROVINCES) ," provincie e ", self.TOTAL_POPULATION ," di popolazione ho numero di infetti iniziali per provincia di", self.INIT_INFECTIONS_PER_PROVINCE, " -> 0.3%")
                     self.currently_infected = self.get_infected_individuals()
                     self.yesterday_infected = len(self.currently_infected)
 
@@ -515,7 +515,7 @@ class Simulation:
 
                     if total_icu_cap > 0:
                         occupancy_rate = total_icu_occ / total_icu_cap
-                        if occupancy_rate >= 0.9:
+                        if occupancy_rate >= 0.9 and not self.HIDE_PRINT:
                             alert_msg = f"!!! ALERT - Day {day}: ICU capacity at {occupancy_rate*100:.1f}%. Action required!"
                             print(alert_msg) # Terminal output
 
@@ -682,6 +682,7 @@ class Simulation:
         )
 
         # Line Chart 2: Day vs Variation of Infected
+        '''
         create_line_chart(
             x=data["Day"],
             y=data["Variation of Infected (%)"],
@@ -702,6 +703,7 @@ class Simulation:
             base_filename="deaths_line_chart",
             color="green"
         )
+        '''
 
 
         # Line Chart 4: Week vs Incidence
