@@ -1134,7 +1134,7 @@ class Individual:
             if self.hospitalization_days_left == 0:
                 self.status = "Recovered"
                 self.infection_days_left = 0
-                self.immunity_days_left = 180
+                self.immunity_days_left = InfectionRules.IMMUNITY_PERIOD
                 self.hospitalized = False
                 self.ICU = False
 
@@ -1142,7 +1142,7 @@ class Individual:
             self.infection_days_left -= 1
             if self.infection_days_left == 0:
                 self.status = "Recovered"
-                self.immunity_days_left = 180
+                self.immunity_days_left = InfectionRules.IMMUNITY_PERIOD
 
         if self.vaccination_days_left > 0:
             self.vaccination_days_left -= 1
@@ -1166,7 +1166,7 @@ class Individual:
 
     def recover(self):
         self.status = "Recovered"
-        self.immunity_days_left = 180
+        self.immunity_days_left = InfectionRules.IMMUNITY_PERIOD
         if InfectionRules.VIRAL_LOAD:
             self.antivesp = 0
             self.v1 = 0

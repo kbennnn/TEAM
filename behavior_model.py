@@ -116,8 +116,8 @@ class BehaviorModel:
             BehaviorModel.VACCINE_EFFECTIVENESS_UPPER_BOUND
         ) / 100
 
-        # Mean duration set to 180 days
-        mean_duration = 180
+        # Mean duration set to 210 days
+        mean_duration = 210
 
         # Create covariance matrix for correlated variables
         cov_matrix = np.array([

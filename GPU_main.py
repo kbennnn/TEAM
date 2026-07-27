@@ -11,10 +11,9 @@ def run_one_sim(idx, days):
     
     # parameters object
     params = Parameters()
-    params.init_infection_per_province = random.randint(1,100)
+    #params.init_infection_per_province = random.randint(1,100)
     params.apply() # use PARAMETER_BOUNDS for handle random changes
 
-    # ogni processo crea la propria istanza
     sim = Simulation()
     sim.create_scenario()
     weekly_csv = sim.run_simulation(days=days, GPU_idx=idx)

@@ -77,11 +77,12 @@ class Simulation:
     # Class constants and default parameters
     HIDE_PRINT = True
     PROVINCES = Membrane.PROVINCES
-    TOTAL_POPULATION = 10000
-    VACCINE_COVERAGE = 0
-    INIT_INFECTIONS_PER_PROVINCE = 10
-    YOUNG_PERCENTAGE = 0.15  # Population aged 0-20 years
-    ELDERLY_PERCENTAGE = 0.32  # Population aged 60+ years
+    TOTAL_POPULATION = 25000
+    VACCINE_COVERAGE = 0.2 #MODIFICATO
+    INIT_INFECTIONS_PER_PROVINCE = int(TOTAL_POPULATION/len(PROVINCES)*3/100) #MODIFICATO
+    YOUNG_PERCENTAGE = 0.2  # Population aged 0-20 years #MODIFICATO
+    ELDERLY_PERCENTAGE = 0.3  # Population aged 60+ years #MODIFICATO
+    
     ADULT_PERCENTAGE = 1 - YOUNG_PERCENTAGE - ELDERLY_PERCENTAGE  # Population aged 21-59 years
     GET_HOME_18 = 0.2  # Probability of students returning home at 18:00
     GET_HOME_19 = 0.48  # Probability of students returning home at 19:00
@@ -352,11 +353,17 @@ class Simulation:
                             p.reduce_all_vaccine_day()   # Update vaccine effectiveness
                         else:
                             p.trigger_infection_progress()  # Simple state progression
+
+                        #AGGIUNTO
+                        if day % 60 == 0:                    # ogni 60 giorni...
+                            p.decay_all_vaccine_effectiveness()  # ...dimezza l'efficacia
+
+                            
                 else:
                     # First day initialization and reporting
-                    print("prudence parameter of", InfectionRules.PRUDENCE_PARAMETER,
-                          " i have a factor of * ", (1 - InfectionRules.PRUDENCE_PARAMETER)**2)
-                    print("numero di infetti iniziali per provincia:", self.INIT_INFECTIONS_PER_PROVINCE)
+                    #print("prudence parameter of", InfectionRules.PRUDENCE_PARAMETER,
+                    #      " i have a factor of * ", (1 - InfectionRules.PRUDENCE_PARAMETER)**2)
+                    print("con", len(self.PROVINCES) ," provincie e ", self.TOTAL_POPULATION ," di popolazione ho numero di infetti iniziali per provincia di ", self.INIT_INFECTIONS_PER_PROVINCE, " -> 3%")
                     self.currently_infected = self.get_infected_individuals()
                     self.yesterday_infected = len(self.currently_infected)
 

@@ -7,6 +7,7 @@ class InfectionRules:
     # Disease progression parameters
     INCUBATION_PERIOD = 2 #MODIFICATO was 5 for covid 
     HOSPITALIZATION_PERIOD = 7
+    IMMUNITY_PERIOD = 180
 
     # Simulation control flags
     BEHAVIOR_TRIGGER = True     # Enable behavioral adaptation based on infection rates
@@ -22,7 +23,6 @@ class InfectionRules:
     CAUTION_FACTOR = 0.001      # Impact of caution on infection spread
     V1_GROWTH_PROB = 0.035      # Probability of viral load growth
     ANTIV_KILL_PROB = 0.001     # Probability of antibodies neutralizing virus
-    INFECTION_REDUCTION_FACTOR = 1.15
 
     # Age and symptom-based antibody production probabilities
     # Format: ANTIVESP_[AGE]_[SYMPTOM LEVEL]_PROB
@@ -40,6 +40,7 @@ class InfectionRules:
     INCUBATION_V1 = 5           # Initial viral load during incubation
     INFECTION_V1 = 200          # Viral load threshold for infection
     RECOVERED_ANTIVESP = 40     # Antibody threshold for recovery
+    SYMPTOMS_PROGRESSION = 700  # Viral load threshold for symptoms growth
 
     # Behavioral parameters
     PRUDENCE_PARAMETER = 0.9    # Controls social distancing (0=no caution, 1=complete isolation with E2)
@@ -52,6 +53,10 @@ class InfectionRules:
     @classmethod
     def update_hospitalization_period(cls, new_value: int):
         cls.HOSPITALIZATION_PERIOD = new_value
+
+    @classmethod
+    def update_immunity_period(cls, new_value: int):
+        cls.IMMUNITY_PERIOD = new_value
 
     @classmethod
     def update_hospitalization_prob(cls, new_value: int):
@@ -97,9 +102,25 @@ class InfectionRules:
     def update_antiv_kill_prob(cls, new_value: bool):
         cls.ANTIV_KILL_PROB = new_value
 
+
+    # Viral load thresholds
     @classmethod
-    def update_infection_reduction_factor(cls, new_value: bool):
-        cls.INFECTION_REDUCTION_FACTOR = new_value
+    def update_incubation_v1(cls, new_value: bool):
+        cls.INCUBATION_V1 = new_value
+
+    @classmethod
+    def update_infection_v1(cls, new_value: bool):
+        cls.INFECTION_V1 = new_value
+
+    @classmethod
+    def update_recovered_antivesp(cls, new_value: bool):
+        cls.RECOVERED_ANTIVESP = new_value
+
+    @classmethod
+    def update_symptoms_progression(cls, new_value: bool):
+        cls.SYMPTOMS_PROGRESSION = new_value
+
+  
 
     @staticmethod
     def infect_individuals(individuals, infection_rate, number_of_infected, total_in_membrane, province_membrane):
@@ -123,7 +144,7 @@ class InfectionRules:
         n = province_membrane.total_population()
 
         # Apply global infection reduction factor
-        adjusted_infection_rate = infection_rate / InfectionRules.INFECTION_REDUCTION_FACTOR
+        #adjusted_infection_rate = infection_rate / InfectionRules.INFECTION_REDUCTION_FACTOR
 
         # Process each susceptible individual
         for individual in individuals:
@@ -131,7 +152,7 @@ class InfectionRules:
                 continue
 
             # Calculate infection probability based on local conditions
-            probability_of_infection = adjusted_infection_rate
+            probability_of_infection = infection_rate
 
             # Apply behavioral adaptation factor if enabled
             if InfectionRules.BEHAVIOR_TRIGGER:
@@ -304,7 +325,7 @@ def handle_symptoms(individuals):
         individuals: List of Individual objects to process
     """
     for individual in individuals:
-        if individual.inf > 699:
+        if individual.inf >= InfectionRules.SYMPTOMS_PROGRESSION:
             # Symptom progression probabilities (values differ from paper)
             if individual.symptoms == "E3" and random.random() < 0.001:  # Paper: 0.0025
                 individual.symptoms = "E4"

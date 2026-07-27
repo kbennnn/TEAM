@@ -8,79 +8,29 @@ import os, csv
 @dataclass
 class Parameters:
 
-    # Simulation
-    init_infection_per_province: int = 10
-    vaccine_coverage: float = 0
-
     # InfectionRules
-    incubation_period: int = 2
-    hospitalization_period: int = 7
     hospitalization_prob: float = 0.03
-    icu_prob: float = 0.05
-    caution_factor: float = 0.001
+    caution_factor: float = 0.001 #TODO check  if usefull
     v1_growth_prob: float = 0.035
     antiv_kill_prob: float = 0.001
-    infection_reduction_factor: float = 1.15
+    prudence_parameter: float = 0.9
+    # Viral load thresholds
+    incubation_v1: int = 5
+    infection_v1: int = 200
+    recovered_antivesp: int = 40
+    symptoms_progression: int = 700 
 
     # Behaviour model
-    vaccine_effectiveness_lower_bound: int = 30
-    vaccine_effectiveness_upper_bound: int = 60
-    duration_correlation: float = 0.8
     f_star: float = 0.01
 
 
     def apply(self):
 
-        # Simulation
-        Simulation.INIT_INFECTIONS_PER_PROVINCE = self.init_infection_per_province
-        Simulation.VACCINE_COVERAGE = self.vaccine_coverage
-
-        # InfectionRules
-        InfectionRules.INCUBATION_PERIOD = self.incubation_period
-        InfectionRules.HOSPITALIZATION_PERIOD = self.hospitalization_period
-        InfectionRules.HOSPITALIZATION_PROB = self.hospitalization_prob
-        InfectionRules.ICU_PROB = self.icu_prob
-        InfectionRules.CAUTION_FACTOR = self.caution_factor
-        InfectionRules.V1_GROWTH_PROB = self.v1_growth_prob
-        InfectionRules.ANTIV_KILL_PROB = self.antiv_kill_prob
-        InfectionRules.INFECTION_REDUCTION_FACTOR = self.infection_reduction_factor
-
-        # Behaviour model
-        BehaviorModel.VACCINE_EFFECTIVENESS_LOWER_BOUND = self.vaccine_effectiveness_lower_bound
-        BehaviorModel.VACCINE_EFFECTIVENESS_UPPER_BOUND = self.vaccine_effectiveness_upper_bound
-        BehaviorModel.DURATION_CORRELATION = self.duration_correlation
-        BehaviorModel.F_STAR = self.f_star
-
-    def apply(self):
-
-        # ==========================
-        # Simulation parameters
-        # ==========================
-        Simulation.update_initial_infection_per_province(
-            self.init_infection_per_province
-        )
-
-        Simulation.update_vaccine_coverage(
-            self.vaccine_coverage
-        )
-
-        # ==========================
         # InfectionRules parameters
-        # ==========================
-        InfectionRules.update_incubation_period(
-            self.incubation_period
-        )
-
-        InfectionRules.update_hospitalization_period(
-            self.hospitalization_period
-        )
+        
 
         InfectionRules.update_hospitalization_prob(
             self.hospitalization_prob
-        )
-
-        InfectionRules.update_icu_prob(
-            self.icu_prob
         )
 
         InfectionRules.update_caution_factor(
@@ -95,32 +45,35 @@ class Parameters:
             self.antiv_kill_prob
         )
 
-        InfectionRules.update_infection_reduction_factor(
-            self.infection_reduction_factor
+        InfectionRules.update_prudence_parameter(
+            self.prudence_parameter
         )
 
-        # ==========================
+        # Viral load thresholds
+        InfectionRules.update_incubation_v1(
+            self.incubation_v1
+        )
+
+        InfectionRules.update_infection_v1(
+            self.infection_v1
+        )
+
+        InfectionRules.update_recovered_antivesp(
+            self.recovered_antivesp
+        )
+
+        InfectionRules.update_symptoms_progression(
+            self.symptoms_progression
+        )     
+
         # BehaviorModel parameters
-        # ==========================
-        BehaviorModel.update_vaccine_effectiveness_lower_bound(
-            self.vaccine_effectiveness_lower_bound
-        )
-
-        BehaviorModel.update_vaccine_effectiveness_upper_bound(
-            self.vaccine_effectiveness_upper_bound
-        )
-
-        BehaviorModel.update_duration_correlation(
-            self.duration_correlation
-        )
-
         BehaviorModel.update_f_star(
             self.f_star
         )
 
 
     def save_result(self, simulation_csv: str, score: float):
-        result_file = "curve_score"
+        result_file = "curve_score.csv"
 
         simulation_name = os.path.basename(simulation_csv) #extract the name of the simulation
 
@@ -142,24 +95,16 @@ class Parameters:
 
 
 PARAMETER_BOUNDS = {
-
-    # Simulation
-    "init_infection_per_province": (1, 100),
-    "vaccine_coverage": (0.0, 1.0),
-
     # Infection
-    "incubation_period": (1, 10),
-    "hospitalization_period": (1, 30),
-    "hospitalization_prob": (0.0, 0.20),
-    "icu_prob": (0.0, 0.20),
+    "hospitalization_prob": (0.01, 0.10),
     "caution_factor": (0.0, 0.05),
-    "v1_growth_prob": (0.0, 0.10),
-    "antiv_kill_prob": (0.0, 0.10),
-    "infection_reduction_factor": (1.0, 5.0),
-
+    "v1_growth_prob": (0.01, 0.06),
+    "antiv_kill_prob": (0.0001, 0.01),
+    "symptoms_progression": (500, 800),
+    "incubation_v1": (1, 30),
+    "infection_v1": (50, 300),
+    "recovered_antivesp": (10, 70),
+    "prudence_parameter": (0.6, 1.0),
     # Behaviour
-    "vaccine_effectiveness_lower_bound": (40, 80),
-    "vaccine_effectiveness_upper_bound": (60, 100),
-    "duration_correlation": (0.0, 1.0),
-    "f_star": (0.001, 0.03),
+    "f_star": (0.0005, 0.2),
 }
