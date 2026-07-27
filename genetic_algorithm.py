@@ -1,6 +1,8 @@
 import random
 from deap import base, creator, tools
 from parameters import Parameters
+from gpu_runner import run_one_sim
+from concurrent.futures import ProcessPoolExecutor
 import ga_config
 
 
@@ -75,16 +77,35 @@ class GeneticAlgorithm:
             n=ga_config.POPULATION_SIZE
         )
 
+    # Launch the simulations 
+    def evaluate_population(self, population, days):
+        with ProcessPoolExecutor(max_workers=ga_config.POPULATION_SIZE) as exe:
+            futures = []
+            for idx, individual in enumerate(population):
+
+                params = Parameters.from_vector(individual)
+                futures.append(
+                    exe.submit(
+                        run_one_sim,
+                        idx,
+                        params,
+                        days
+                    )
+                )
+
+            for future, individual in zip(futures, population):
+
+                idx, score, elapsed, pid = future.result()
+                individual.fitness.values = (score,)
+
 
     def mutate_uniform(self, individual):
-
         for index, name in enumerate(Parameters.PARAMETER_BOUNDS.keys()):
             if random.random() < ga_config.MUTATION_GENE_PROBABILITY:
                 low, high = Parameters.PARAMETER_BOUNDS[name]
-                individual[index] = random.uniform(
-                    low,
-                    high
-                )
+                sigma = (high - low) * ga_config.MUTATION_STRENGTH
+                new_value = individual[index] + random.gauss(0, sigma)
+                individual[index] = min(max(new_value, low), high)  # clip to bounds
 
         return individual,
 
