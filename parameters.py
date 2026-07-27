@@ -73,6 +73,27 @@ class Parameters:
         )
 
 
+    def to_vector(self):
+        """
+        Convert Parameters object into a list for GA operations.
+        The order must match PARAMETER_BOUNDS.
+        """
+        return [
+            getattr(self, name)
+            for name in PARAMETER_BOUNDS.keys()
+        ]
+
+    @classmethod
+    def from_vector(cls, vector):
+        """
+        Create Parameters object from GA individual.
+        """
+        params = cls()
+        for name, value in zip(PARAMETER_BOUNDS.keys(), vector):
+            setattr(params, name, value)
+        return params
+
+
     def save_result(self, simulation_csv: str, score: float):
         result_file = "curve_score.csv"
 
