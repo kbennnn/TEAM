@@ -20,7 +20,7 @@ class InfectionRules:
     ICU_PROB = 0.05             # Probability of direct ICU admission with E4 symptoms
 
     # Virus dynamics
-    CAUTION_FACTOR = 0.001      # Impact of caution on infection spread
+    CAUTION_FACTOR = 0.1      # Impact of caution on infection spread
     V1_GROWTH_PROB = 0.035      # Probability of viral load growth
     ANTIV_KILL_PROB = 0.001     # Probability of antibodies neutralizing virus
 

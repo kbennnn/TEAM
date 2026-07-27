@@ -77,7 +77,7 @@ class Simulation:
     # Class constants and default parameters
     HIDE_PRINT = True
     PROVINCES = Membrane.PROVINCES
-    TOTAL_POPULATION = 25000
+    TOTAL_POPULATION = 10000
     VACCINE_COVERAGE = 0.2 #MODIFICATO
     INIT_INFECTIONS_PER_PROVINCE = int(TOTAL_POPULATION/len(PROVINCES)*3/100) #MODIFICATO
     YOUNG_PERCENTAGE = 0.2  # Population aged 0-20 years #MODIFICATO

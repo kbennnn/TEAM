@@ -1,8 +1,9 @@
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, replace
 from simulation import Simulation
 from infection_rules import InfectionRules
 from behavior_model import BehaviorModel
 import os, csv
+import random
 
 
 @dataclass
@@ -10,7 +11,6 @@ class Parameters:
 
     # InfectionRules
     hospitalization_prob: float = 0.03
-    caution_factor: float = 0.001 #TODO check  if usefull
     v1_growth_prob: float = 0.035
     antiv_kill_prob: float = 0.001
     prudence_parameter: float = 0.9
@@ -19,53 +19,54 @@ class Parameters:
     infection_v1: int = 200
     recovered_antivesp: int = 40
     symptoms_progression: int = 700 
-
     # Behaviour model
     f_star: float = 0.01
+
+
+    @classmethod
+    def random(cls):
+        params = cls()
+
+        for name, (low, high) in PARAMETER_BOUNDS.items():
+            current_value = getattr(params, name)
+            if isinstance(current_value, int):
+                value = random.randint(low, high) # int values
+            else:
+                value = random.uniform(low, high) #real values
+
+            setattr(params, name, value)
+
+        return params
 
 
     def apply(self):
 
         # InfectionRules parameters
-        
-
         InfectionRules.update_hospitalization_prob(
             self.hospitalization_prob
         )
-
-        InfectionRules.update_caution_factor(
-            self.caution_factor
-        )
-
         InfectionRules.update_v1_growth_prob(
             self.v1_growth_prob
         )
-
         InfectionRules.update_antiv_kill_prob(
             self.antiv_kill_prob
         )
-
         InfectionRules.update_prudence_parameter(
             self.prudence_parameter
         )
-
         # Viral load thresholds
         InfectionRules.update_incubation_v1(
             self.incubation_v1
         )
-
         InfectionRules.update_infection_v1(
             self.infection_v1
         )
-
         InfectionRules.update_recovered_antivesp(
             self.recovered_antivesp
         )
-
         InfectionRules.update_symptoms_progression(
             self.symptoms_progression
         )     
-
         # BehaviorModel parameters
         BehaviorModel.update_f_star(
             self.f_star
@@ -94,10 +95,16 @@ class Parameters:
             writer.writerow(row)
 
 
+    def __str__(self): # for printing the values
+        lines = ["Parameters:"]
+        for key, value in asdict(self).items():
+            lines.append(f"  {key}: {value}")
+        return "\n".join(lines)   
+
+
 PARAMETER_BOUNDS = {
     # Infection
     "hospitalization_prob": (0.01, 0.10),
-    "caution_factor": (0.0, 0.05),
     "v1_growth_prob": (0.01, 0.06),
     "antiv_kill_prob": (0.0001, 0.01),
     "symptoms_progression": (500, 800),
