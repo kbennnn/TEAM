@@ -78,7 +78,7 @@ class GeneticAlgorithm:
         )
 
     # Launch the simulations 
-    def evaluate_population(self, population, days):
+    def evaluate_population(self, population, days, generation):
         with ProcessPoolExecutor(max_workers=ga_config.POPULATION_SIZE) as exe:
             futures = []
             for idx, individual in enumerate(population):
@@ -89,7 +89,8 @@ class GeneticAlgorithm:
                         run_one_sim,
                         idx,
                         params,
-                        days
+                        days,
+                        generation
                     )
                 )
 
@@ -103,9 +104,10 @@ class GeneticAlgorithm:
         for index, name in enumerate(Parameters.PARAMETER_BOUNDS.keys()):
             if random.random() < ga_config.MUTATION_GENE_PROBABILITY:
                 low, high = Parameters.PARAMETER_BOUNDS[name]
-                sigma = (high - low) * ga_config.MUTATION_STRENGTH
-                new_value = individual[index] + random.gauss(0, sigma)
-                individual[index] = min(max(new_value, low), high)  # clip to bounds
+                if isinstance(low, int) and isinstance(high, int):
+                    individual[index] = random.randint(low, high)
+                else:
+                    individual[index] = random.uniform(low, high)
 
         return individual,
 

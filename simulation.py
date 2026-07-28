@@ -295,7 +295,7 @@ class Simulation:
                     infected_individuals.add(individual)
                     available_individuals.remove(individual)
 
-    def run_simulation(self, GPU_idx, days=7, hours_per_day=24):
+    def run_simulation(self, GPU_idx, days=7, hours_per_day=24, generation=0):
         """
         Execute the complete simulation for the specified duration.
 
@@ -318,7 +318,7 @@ class Simulation:
         os.makedirs(directory, exist_ok=True)
         # Create filename with descriptive parameters
         csv_filename = (
-            f"{directory}/simulation_{self.TOTAL_POPULATION}_{len(self.PROVINCES)}_{days}_{GPU_idx}___"
+            f"{directory}/simulation_{self.TOTAL_POPULATION}_{len(self.PROVINCES)}_{days}_{generation}_{GPU_idx}___"
             f"{current_datetime}.csv"
         )
         # Initialize the CSV file with headers
@@ -615,10 +615,9 @@ class Simulation:
 
         weekly_data["Week"] = weekly_data["Week"] + 1
 
-        weekly_csv_filename = csv_filename.replace(
-            ".csv",
-            "_weekly.csv"
-        )
+ 
+        directory, filename = os.path.split(csv_filename)
+        weekly_csv_filename = os.path.join(directory, f"weekly_{filename}")
 
         weekly_data.to_csv(
             weekly_csv_filename,

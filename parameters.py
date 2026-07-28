@@ -27,7 +27,7 @@ class Parameters:
     def random(cls):
         params = cls()
 
-        for name, (low, high) in PARAMETER_BOUNDS.items():
+        for name, (low, high) in cls.PARAMETER_BOUNDS.items():
             current_value = getattr(params, name)
             if isinstance(current_value, int):
                 value = random.randint(low, high) # int values
@@ -80,7 +80,7 @@ class Parameters:
         """
         return [
             getattr(self, name)
-            for name in PARAMETER_BOUNDS.keys()
+            for name in self.PARAMETER_BOUNDS.keys()
         ]
 
     @classmethod
@@ -89,7 +89,7 @@ class Parameters:
         Create Parameters object from GA individual.
         """
         params = cls()
-        for name, value in zip(PARAMETER_BOUNDS.keys(), vector):
+        for name, value in zip(cls.PARAMETER_BOUNDS.keys(), vector):
             setattr(params, name, value)
         return params
 
@@ -123,16 +123,17 @@ class Parameters:
         return "\n".join(lines)   
 
 
-PARAMETER_BOUNDS = {
-    # Infection
-    "hospitalization_prob": (0.01, 0.10),
-    "v1_growth_prob": (0.01, 0.06),
-    "antiv_kill_prob": (0.0001, 0.01),
-    "symptoms_progression": (500, 800),
-    "incubation_v1": (1, 30),
-    "infection_v1": (50, 300),
-    "recovered_antivesp": (10, 70),
-    "prudence_parameter": (0.6, 1.0),
-    # Behaviour
-    "f_star": (0.0005, 0.2),
-}
+    PARAMETER_BOUNDS = {
+        # Infection
+        "hospitalization_prob": (0.01, 0.10),
+        "v1_growth_prob": (0.01, 0.06),
+        "antiv_kill_prob": (0.0001, 0.01),
+        "prudence_parameter": (0.6, 1.0),
+        # Viral load thresholds 
+        "incubation_v1": (1, 30),
+        "infection_v1": (50, 300),
+        "recovered_antivesp": (10, 70),
+        "symptoms_progression": (500, 800),
+        # Behaviour
+        "f_star": (0.0005, 0.2),
+    }
