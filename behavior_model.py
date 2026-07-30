@@ -14,8 +14,8 @@ class BehaviorModel:
     - DURATION_CORRELATION: Correlation coefficient between vaccine effectiveness and duration
     - F_STAR: Reference infection rate for calibrating willingness calculations
     """
-    VACCINE_EFFECTIVENESS_LOWER_BOUND = 30 #MODIFICATO
-    VACCINE_EFFECTIVENESS_UPPER_BOUND = 60 #MODIFICATO
+    VACCINE_EFFECTIVENESS_LOWER_BOUND = 15 #MODIFICATO
+    VACCINE_EFFECTIVENESS_UPPER_BOUND = 65 #MODIFICATO
     DURATION_CORRELATION = 0.8
     F_STAR = 0.01
 

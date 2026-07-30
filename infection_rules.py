@@ -7,7 +7,6 @@ class InfectionRules:
     # Disease progression parameters
     INCUBATION_PERIOD = 2 #MODIFICATO was 5 for covid 
     HOSPITALIZATION_PERIOD = 7
-    IMMUNITY_PERIOD = 180
 
     # Simulation control flags
     BEHAVIOR_TRIGGER = True     # Enable behavioral adaptation based on infection rates
@@ -55,20 +54,12 @@ class InfectionRules:
         cls.HOSPITALIZATION_PERIOD = new_value
 
     @classmethod
-    def update_immunity_period(cls, new_value: int):
-        cls.IMMUNITY_PERIOD = new_value
-
-    @classmethod
     def update_hospitalization_prob(cls, new_value: int):
         cls.HOSPITALIZATION_PROB = new_value
 
     @classmethod
     def update_icu_prob(cls, new_value: int):
         cls.ICU_PROB = new_value
-
-    @classmethod
-    def update_incubation_period(cls, new_value: int):
-        cls.INCUBATION_PERIOD = new_value
 
     @classmethod
     def update_caution_factor(cls, new_value: float):

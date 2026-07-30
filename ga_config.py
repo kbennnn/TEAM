@@ -1,9 +1,9 @@
 # Simulation
-DAYS = 53
+DAYS = 209
 
 # Population
-POPULATION_SIZE = 3
-GENERATIONS = 3
+POPULATION_SIZE = 10
+GENERATIONS = 4
 
 # Elitism
 ELITE_SIZE = 1 # keep the best individuals for the next generation ---> TODO potrei evitare di rirunnarli (anche se il random li faranno cambiare)
