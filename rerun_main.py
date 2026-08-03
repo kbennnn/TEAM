@@ -56,6 +56,6 @@ BEST_PARAMETERS = [
 for params in BEST_PARAMETERS: #Launch the same validation
     run_repeated(
         params=params,
-        repetitions=3,
+        rep=3,
         days=ga_config.DAYS
     )

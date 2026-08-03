@@ -1100,7 +1100,6 @@ class Individual:
         self.number = number
         self.age_group = age_group
         self.hospitalization_days_left = 0
-        self.immunity_days_left = 0
         # Viral and immune parameters
         self.v1 = v1  # Active viral load
         self.v1_ino = v1_ino  # Initial viral exposure amount
@@ -1154,7 +1153,6 @@ class Individual:
             if self.hospitalization_days_left == 0:
                 self.status = "Recovered"
                 self.infection_days_left = 0
-                self.immunity_days_left = InfectionRules.IMMUNITY_PERIOD
                 self.hospitalized = False
                 self.ICU = False
 
@@ -1162,17 +1160,18 @@ class Individual:
             self.infection_days_left -= 1
             if self.infection_days_left == 0:
                 self.status = "Recovered"
-                self.immunity_days_left = InfectionRules.IMMUNITY_PERIOD
 
         if self.vaccination_days_left > 0:
             self.vaccination_days_left -= 1
             if self.vaccination_days_left == 0:
                 self.vaccinated = False
 
+        '''
         if self.status == 'Recovered' and self.immunity_days_left > 0:
             self.immunity_days_left -= 1
             if self.immunity_days_left == 0:
                 self.status = 'Healthy'
+        '''
 
 
     def start_infection(self):
@@ -1186,7 +1185,6 @@ class Individual:
 
     def recover(self):
         self.status = "Recovered"
-        self.immunity_days_left = InfectionRules.IMMUNITY_PERIOD
         if InfectionRules.VIRAL_LOAD:
             self.antivesp = 0
             self.v1 = 0
