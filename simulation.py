@@ -280,19 +280,19 @@ class Simulation:
 
         # Introduce initial infections
         for province in self.provinces:
-            infected_individuals = set()
-            available_individuals = set()
+            infected_individuals = []
+            available_individuals = []
 
             for houses in province.houses: # Get all the individuals from houses
                 for individual in houses.individuals_inside:
-                    available_individuals.add(individual)
+                    available_individuals.append(individual)
 
             for _ in range(self.INIT_INFECTIONS_PER_PROVINCE):
-                available_individuals_list = list(available_individuals)
+                #available_individuals_list = list(available_individuals)
                 if available_individuals:
-                    individual = random.choice(available_individuals_list)
+                    individual = random.choice(available_individuals)
                     individual.start_infection()
-                    infected_individuals.add(individual)
+                    infected_individuals.append(individual)
                     available_individuals.remove(individual)
 
     def run_simulation(self, GPU_idx, days=7, hours_per_day=24, generation=0):
@@ -592,7 +592,7 @@ class Simulation:
 
         #----Create weekly aggregated CSV and graphs
         weekly_data = data.iloc[:len(data) - len(data) % 7].copy()
-        weekly_data["Week"] = (weekly_data["Day"] - 1 // 7)
+        weekly_data["Week"] = ((weekly_data["Day"] - 1) // 7) 
 
         weekly_data = weekly_data.groupby("Week").agg({
             "Variation of Infected": "sum",
@@ -1251,7 +1251,7 @@ class Simulation:
             total_vaccinated_fraction += fraction_to_vaccinate
 
     def check_for_death(self, individuals):
-        for individual in individuals:
+        for individual in sorted(individuals, key=lambda x: x.number):
             if InfectionRules.VIRAL_LOAD:
                 if individual.symptoms == "E3":
                     death_probability = 0.0001 # Is 0.0005 in paper and Is 0.00025 in rules.xml

@@ -10,6 +10,10 @@ def set_seed():
     np.random.seed(ga_config.RANDOM_SEED)
 
 def run_one_sim(idx, params: Parameters, days, generation):
+    print(random.random()) #fix RANDOM
+    print(random.random())
+    print(random.random())
+    
     set_seed()
     t0 = time.time()
     # Print and apply parameters

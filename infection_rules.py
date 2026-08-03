@@ -179,7 +179,7 @@ def handle_infection(individuals, v1_growth_prob, antiv_kill_prob):
         v1_growth_prob: Probability of viral load increase per unit
         antiv_kill_prob: Probability of antibody neutralizing virus
     """
-    for individual in individuals:
+    for individual in sorted(individuals, key=lambda x: x.number):
         if individual.v1 <= 0:
             continue
 
@@ -315,7 +315,7 @@ def handle_symptoms(individuals):
     Args:
         individuals: List of Individual objects to process
     """
-    for individual in individuals:
+    for individual in sorted(individuals, key=lambda x: x.number):
         if individual.inf >= InfectionRules.SYMPTOMS_PROGRESSION:
             # Symptom progression probabilities (values differ from paper)
             if individual.symptoms == "E3" and random.random() < 0.001:  # Paper: 0.0025
