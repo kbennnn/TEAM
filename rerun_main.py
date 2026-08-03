@@ -3,7 +3,7 @@ from gpu_runner import run_repeated
 import ga_config
 
 BEST_PARAMETERS = [
-
+    #Create Parameters from previous runs, to validate them
     Parameters.from_dict({
         "hospitalization_prob": 0.054647629,
         "v1_growth_prob": 0.056732805,
@@ -53,7 +53,7 @@ BEST_PARAMETERS = [
     }),
 ]
 
-for params in BEST_PARAMETERS:
+for params in BEST_PARAMETERS: #Launch the same validation
     run_repeated(
         params=params,
         repetitions=3,

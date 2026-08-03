@@ -23,24 +23,29 @@ def run_one_sim(idx, params: Parameters, days, generation):
     return idx, score, elapsed, os.getpid()
 
 
-def run_repeated(params: Parameters,
-                 repetitions: int = 3,
-                 days: int = 210,
-                 generation: int = -1,
-                 max_workers: int = 3):
-
+def run_repeated(params: Parameters, rep: int, days: int, gen: int = -1, max_workers: int = 3):
+    #Launch the same simulation with generation -1 in ordeer to check the variance of the results
     results = []
-
     with ProcessPoolExecutor(max_workers=max_workers) as exe:
         futures = []
-        for idx in range(repetitions):
+        for idx in range(rep):
             futures.append(
                 exe.submit(
                     run_one_sim,
                     idx,
                     params,
                     days,
-                    generation
+                    gen
                 )
             )
+
+            for future in futures:
+                idx, score, elapsed, pid = future.result()
+
+                print(
+                    f"Sim {idx}: score={score:.5f}, "
+                )
+
+                results.append((idx, score, elapsed, pid))
+
     return results
