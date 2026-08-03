@@ -1,4 +1,5 @@
 # Simulation
+RANDOM_SEED = 42
 DAYS = 210
 
 # Population
