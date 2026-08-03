@@ -592,9 +592,7 @@ class Simulation:
 
         #----Create weekly aggregated CSV and graphs
         weekly_data = data.iloc[:len(data) - len(data) % 7].copy()
-        weekly_data["Week"] = (
-            weekly_data["Day"] // 7
-        )
+        weekly_data["Week"] = (weekly_data["Day"] - 1 // 7)
 
         weekly_data = weekly_data.groupby("Week").agg({
             "Variation of Infected": "sum",
