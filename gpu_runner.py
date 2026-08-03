@@ -1,6 +1,7 @@
 from simulation import Simulation
 from parameters import Parameters
 from curve_evaluator import CurveEvaluator
+from concurrent.futures import ProcessPoolExecutor
 import time, os
 
 def run_one_sim(idx, params: Parameters, days, generation):
@@ -20,3 +21,26 @@ def run_one_sim(idx, params: Parameters, days, generation):
     elapsed = time.time() - t0
 
     return idx, score, elapsed, os.getpid()
+
+
+def run_repeated(params: Parameters,
+                 repetitions: int = 3,
+                 days: int = 210,
+                 generation: int = -1,
+                 max_workers: int = 3):
+
+    results = []
+
+    with ProcessPoolExecutor(max_workers=max_workers) as exe:
+        futures = []
+        for idx in range(repetitions):
+            futures.append(
+                exe.submit(
+                    run_one_sim,
+                    idx,
+                    params,
+                    days,
+                    generation
+                )
+            )
+    return results

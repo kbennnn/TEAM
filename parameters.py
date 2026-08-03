@@ -23,7 +23,7 @@ class Parameters:
     f_star: float = 0.01
 
 
-    @classmethod
+    @classmethod #Random constructor inside bounds
     def random(cls):
         params = cls()
 
@@ -36,6 +36,14 @@ class Parameters:
 
             setattr(params, name, value)
 
+        return params
+
+
+    @classmethod #Constructor from dictionary (lists of fixed parameters)
+    def from_dict(cls, values):
+        params = cls()
+        for k, v in values.items():
+            setattr(params, k, v)
         return params
 
 

@@ -1,5 +1,5 @@
 # Simulation
-DAYS = 209
+DAYS = 210
 
 # Population
 POPULATION_SIZE = 10
