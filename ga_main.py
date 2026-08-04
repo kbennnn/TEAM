@@ -6,7 +6,7 @@ def main():
     population = ga.create_population()
 
     for generation in range(ga_config.GENERATIONS):
-        print("Starting the generation number", generation)
+        print("GA: starting the generation number", generation)
         ga.evaluate_population(population, ga_config.DAYS, generation)
         population = ga.evolve_population(population)
 

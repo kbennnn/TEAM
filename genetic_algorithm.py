@@ -98,6 +98,13 @@ class GeneticAlgorithm:
 
                 idx, score, elapsed, pid = future.result()
                 individual.fitness.values = (score,)
+                
+        # Print best individual of the generation
+        best = tools.selBest(population, 1)[0]
+        print(
+            f"Generation {generation}: "
+            f"best score = {best.fitness.values[0]:.6f}"
+        )
 
 
     def mutate_uniform(self, individual):

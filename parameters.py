@@ -14,6 +14,8 @@ class Parameters:
     v1_growth_prob: float = 0.035
     antiv_kill_prob: float = 0.001
     prudence_parameter: float = 0.9
+    antivesp_young_ratio: int = 6
+    antivesp_adult_ratio: int = 3
     # Viral load thresholds
     incubation_v1: int = 5
     infection_v1: int = 200
@@ -62,6 +64,12 @@ class Parameters:
         InfectionRules.update_prudence_parameter(
             self.prudence_parameter
         )
+        InfectionRules.update_antivesp_young_ratio(
+            self.antivesp_young_ratio
+        )
+        InfectionRules.update_antivesp_adult_ratio(
+            self.antivesp_adult_ratio
+        )        
         # Viral load thresholds
         InfectionRules.update_incubation_v1(
             self.incubation_v1
@@ -137,6 +145,8 @@ class Parameters:
         "v1_growth_prob": (0.01, 0.06),
         "antiv_kill_prob": (0.0001, 0.01),
         "prudence_parameter": (0.6, 1.0),
+        "antivesp_young_ratio": (2, 10),
+        "antivesp_adult_ratio": (1, 4),
         # Viral load thresholds 
         "incubation_v1": (1, 30),
         "infection_v1": (50, 300),

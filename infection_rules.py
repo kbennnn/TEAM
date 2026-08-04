@@ -25,15 +25,18 @@ class InfectionRules:
 
     # Age and symptom-based antibody production probabilities
     # Format: ANTIVESP_[AGE]_[SYMPTOM LEVEL]_PROB
-    ANTIVESP_YOUNG_E2_PROB = 0.024
-    ANTIVESP_ADULT_E2_PROB = 0.012
+    ANTIVESP_YOUNG_RATIO = 6
+    ANTIVESP_ADULT_RATIO = 3
     ANTIVESP_ELDERLY_E2_PROB = 0.004
-    ANTIVESP_YOUNG_E3_PROB = 0.018
-    ANTIVESP_ADULT_E3_PROB = 0.009
+    ANTIVESP_YOUNG_E2_PROB = ANTIVESP_ELDERLY_E2_PROB * ANTIVESP_YOUNG_RATIO
+    ANTIVESP_ADULT_E2_PROB = ANTIVESP_ELDERLY_E2_PROB * ANTIVESP_ADULT_RATIO
     ANTIVESP_ELDERLY_E3_PROB = 0.003
-    ANTIVESP_YOUNG_E4_PROB = 0.012
-    ANTIVESP_ADULT_E4_PROB = 0.006
+    ANTIVESP_YOUNG_E3_PROB = ANTIVESP_ELDERLY_E3_PROB * ANTIVESP_YOUNG_RATIO
+    ANTIVESP_ADULT_E3_PROB =  ANTIVESP_ELDERLY_E3_PROB * ANTIVESP_ADULT_RATIO
     ANTIVESP_ELDERLY_E4_PROB = 0.002
+    ANTIVESP_YOUNG_E4_PROB = ANTIVESP_ELDERLY_E4_PROB * ANTIVESP_YOUNG_RATIO
+    ANTIVESP_ADULT_E4_PROB =  ANTIVESP_ELDERLY_E4_PROB * ANTIVESP_ADULT_RATIO
+    
 
     # Viral load thresholds
     INCUBATION_V1 = 5           # Initial viral load during incubation
@@ -92,6 +95,14 @@ class InfectionRules:
     @classmethod
     def update_antiv_kill_prob(cls, new_value: bool):
         cls.ANTIV_KILL_PROB = new_value
+
+    @classmethod
+    def update_antivesp_young_ratio(cls, new_value: bool):
+        cls.ANTIVESP_YOUNG_RATIO = new_value
+
+    @classmethod
+    def update_antivesp_adult_ratio(cls, new_value: bool):
+        cls.ANTIVESP_ADULT_RATIO = new_value
 
 
     # Viral load thresholds
