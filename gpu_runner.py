@@ -13,20 +13,27 @@ def run_one_sim(idx, params: Parameters, days, generation):
     set_seed()
     t0 = time.time()
     # Print and apply parameters
-    print(params) 
+    print(params)
     params.apply()
     # Run simulation
-    sim = Simulation() 
+    sim = Simulation()
     sim.create_scenario()
     weekly_csv = sim.run_simulation(days=days, GPU_idx=idx, generation=generation)
-    # Evaluate result
-    evaluator = CurveEvaluator("lombardy/incidenza_ILI_2025-2026.csv") 
-    score = evaluator.evaluate(weekly_csv)
-    # Save result
-    params.save_result(weekly_csv, score) 
+    # Evaluate result against the 4 seasons, use the "sum" metric for this run
+    evaluator = CurveEvaluator({
+        "2022": "lombardy/incidence_2022-2023.csv",
+        "2023": "lombardy/incidence_2023-2024.csv",
+        "2024": "lombardy/incidence_2024-2025.csv",
+        "2025": "lombardy/incidence_2025-2026.csv",
+    })
+    result = evaluator.evaluate(weekly_csv)
+    score = result["sum"] #Change into minimax or maxmax for different metrics
+    # Save all 3 results
+    params.save_result(weekly_csv, result)
     elapsed = time.time() - t0
 
     return idx, score, elapsed, os.getpid()
+
 
 
 def run_repeated(params: Parameters, rep: int, days: int, gen: int = -1, max_workers: int = 3):

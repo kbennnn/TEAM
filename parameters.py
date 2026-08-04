@@ -110,19 +110,30 @@ class Parameters:
         return params
 
 
-    def save_result(self, simulation_csv: str, score: float):
+
+
+
+
+
+
+    def save_result(self, simulation_csv: str, result: dict):
         result_file = "curve_score.csv"
 
-        simulation_name = os.path.basename(simulation_csv) #extract the name of the simulation
+        simulation_name = os.path.basename(simulation_csv)  # extract the name of the simulation
 
         row = {
             "simulation": simulation_name,
             **asdict(self),        # add all parameters
-            "score": score
+            "score_sum": result["sum"],
+            "score_minimax": result["minimax"],
+            "minimax_year": result["minimax_year"],
+            "score_maxmax": result["maxmax"],
+            "maxmax_year": result["maxmax_year"],
+            **{f"mse_{year}": mse for year, mse in result["per_season"].items()},
         }
 
         file_exists = os.path.exists(result_file)
-
+        
         with open(result_file, "a", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=row.keys())
 
@@ -130,6 +141,7 @@ class Parameters:
                 writer.writeheader()
 
             writer.writerow(row)
+
 
 
     def __str__(self): # for printing the values
