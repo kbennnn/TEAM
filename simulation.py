@@ -363,7 +363,6 @@ class Simulation:
                     # First day initialization and reporting
                     #print("prudence parameter of", InfectionRules.PRUDENCE_PARAMETER,
                     #      " i have a factor of * ", (1 - InfectionRules.PRUDENCE_PARAMETER)**2)
-                    print("con", len(self.PROVINCES) ," provincie e ", self.TOTAL_POPULATION ," di popolazione ho numero di infetti iniziali per provincia di", self.INIT_INFECTIONS_PER_PROVINCE, " -> 0.3%")
                     self.currently_infected = self.get_infected_individuals()
                     self.yesterday_infected = len(self.currently_infected)
 
@@ -586,7 +585,7 @@ class Simulation:
 
 
         # Post-simulation reporting and visualization
-        print("Simulation results saved to:", csv_filename)
+        #print("Simulation results saved to:", csv_filename)
         # Generate visualization graphs from simulation data
         data = pd.read_csv(csv_filename)
 

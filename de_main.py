@@ -9,7 +9,7 @@ def main():
     # Initial evaluation: every individual starts with fitness=None.
     de.evaluate_population(population, de_config.DAYS, generation=0)
 
-    for generation in range(1, de_config.GENERATIONS + 1):
+    for generation in range(de_config.GENERATIONS):
         population = de.evolve_population(
             population,
             de_config.DAYS,
