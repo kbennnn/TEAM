@@ -5,23 +5,24 @@ from behavior_model import BehaviorModel
 # XML rules file uses lower infection and mortality rates, resulting in less extreme simulations
 class InfectionRules:
     # Disease progression parameters
-    INCUBATION_PERIOD = 2 #MODIFICATO was 5 for covid 
+    INCUBATION_PERIOD = 5
     HOSPITALIZATION_PERIOD = 7
 
     # Simulation control flags
     BEHAVIOR_TRIGGER = True     # Enable behavioral adaptation based on infection rates
-    VACCINATION_TRIGGER = True  # Enable vaccination effects CAMBIATO
+    VACCINATION_TRIGGER = False # Enable vaccination effects
     VIRAL_LOAD = True           # Enable viral load mechanics
     ICU_PRESENCE = True         # Enable ICU mechanics
 
     # Healthcare parameters
-    HOSPITALIZATION_PROB = 0.03 # Probability of hospitalization
+    HOSPITALIZATION_PROB = 0.03  # Probability of hospitalization
     ICU_PROB = 0.05             # Probability of direct ICU admission with E4 symptoms
 
     # Virus dynamics
-    CAUTION_FACTOR = 0.1      # Impact of caution on infection spread
+    CAUTION_FACTOR = 0.001      # Impact of caution on infection spread
     V1_GROWTH_PROB = 0.035      # Probability of viral load growth
     ANTIV_KILL_PROB = 0.001     # Probability of antibodies neutralizing virus
+    INFECTION_REDUCTION_FACTOR = 1.15
 
     # Age and symptom-based antibody production probabilities
     # Format: ANTIVESP_[AGE]_[SYMPTOM LEVEL]_PROB
@@ -39,27 +40,17 @@ class InfectionRules:
     INCUBATION_V1 = 5           # Initial viral load during incubation
     INFECTION_V1 = 200          # Viral load threshold for infection
     RECOVERED_ANTIVESP = 40     # Antibody threshold for recovery
-    SYMPTOMS_PROGRESSION = 700  # Viral load threshold for symptoms growth
 
     # Behavioral parameters
     PRUDENCE_PARAMETER = 0.9    # Controls social distancing (0=no caution, 1=complete isolation with E2)
+
+    VACCINATED_VIRUS_FRACTION = 0.5 #tiene conto del fatto che il vaccino esiste solo per 3 dei virus simil-influenzali (influenza, Virus respiratorio sinciziale e SARS-COV-2)
+                                     #e che quei 3 virus sono quelli più presenti, circa al 50%
 
     # Configuration update methods
     @classmethod
     def update_incubation_period(cls, new_value: int):
         cls.INCUBATION_PERIOD = new_value
-
-    @classmethod
-    def update_hospitalization_period(cls, new_value: int):
-        cls.HOSPITALIZATION_PERIOD = new_value
-
-    @classmethod
-    def update_hospitalization_prob(cls, new_value: int):
-        cls.HOSPITALIZATION_PROB = new_value
-
-    @classmethod
-    def update_icu_prob(cls, new_value: int):
-        cls.ICU_PROB = new_value
 
     @classmethod
     def update_caution_factor(cls, new_value: float):
@@ -85,34 +76,6 @@ class InfectionRules:
     def update_ICU_presence(cls, new_value: bool):
         cls.ICU_PRESENCE = new_value
 
-    @classmethod
-    def update_v1_growth_prob(cls, new_value: bool):
-        cls.V1_GROWTH_PROB = new_value
-
-    @classmethod
-    def update_antiv_kill_prob(cls, new_value: bool):
-        cls.ANTIV_KILL_PROB = new_value
-
-
-    # Viral load thresholds
-    @classmethod
-    def update_incubation_v1(cls, new_value: bool):
-        cls.INCUBATION_V1 = new_value
-
-    @classmethod
-    def update_infection_v1(cls, new_value: bool):
-        cls.INFECTION_V1 = new_value
-
-    @classmethod
-    def update_recovered_antivesp(cls, new_value: bool):
-        cls.RECOVERED_ANTIVESP = new_value
-
-    @classmethod
-    def update_symptoms_progression(cls, new_value: bool):
-        cls.SYMPTOMS_PROGRESSION = new_value
-
-  
-
     @staticmethod
     def infect_individuals(individuals, infection_rate, number_of_infected, total_in_membrane, province_membrane):
         """
@@ -135,7 +98,7 @@ class InfectionRules:
         n = province_membrane.total_population()
 
         # Apply global infection reduction factor
-        #adjusted_infection_rate = infection_rate / InfectionRules.INFECTION_REDUCTION_FACTOR
+        adjusted_infection_rate = infection_rate / InfectionRules.INFECTION_REDUCTION_FACTOR
 
         # Process each susceptible individual
         for individual in individuals:
@@ -143,7 +106,7 @@ class InfectionRules:
                 continue
 
             # Calculate infection probability based on local conditions
-            probability_of_infection = infection_rate
+            probability_of_infection = adjusted_infection_rate
 
             # Apply behavioral adaptation factor if enabled
             if InfectionRules.BEHAVIOR_TRIGGER:
@@ -152,8 +115,10 @@ class InfectionRules:
                 probability_of_infection *= local_infection_ratio * caution_multiplier
 
             # Apply vaccination protection if enabled and individual is vaccinated
-            if InfectionRules.VACCINATION_TRIGGER and individual.vaccination_days_left > 0:
-                probability_of_infection *= (1 - individual.vaccine_effectiveness)
+            
+            if (InfectionRules.VACCINATION_TRIGGER and individual.vaccination_days_left > 0 and individual.age_group == "elderly"): #aggiunto: considera solo gli anziani
+                effective_protection = (individual.vaccine_effectiveness * InfectionRules.VACCINATED_VIRUS_FRACTION) #aggiunto: considera che il vaccino esiste solo per 3 virus su 10
+                probability_of_infection *= (1 - effective_protection)
 
             # Determine if infection occurs
             if probability_of_infection >= random.random():
@@ -316,7 +281,7 @@ def handle_symptoms(individuals):
         individuals: List of Individual objects to process
     """
     for individual in individuals:
-        if individual.inf >= InfectionRules.SYMPTOMS_PROGRESSION:
+        if individual.inf > 699:
             # Symptom progression probabilities (values differ from paper)
             if individual.symptoms == "E3" and random.random() < 0.001:  # Paper: 0.0025
                 individual.symptoms = "E4"
