@@ -2,7 +2,7 @@ from simulation import Simulation
 from parameters import Parameters
 from curve_evaluator import CurveEvaluator
 from concurrent.futures import ProcessPoolExecutor
-import time, os, random, ga_config
+import time, os, random, ga.ga_config as ga_config
 import numpy as np
 
 def set_seed():

@@ -1,6 +1,6 @@
 from parameters import Parameters 
 from gpu_runner import run_repeated
-import ga_config
+import ga.ga_config as ga_config
 
 BEST_PARAMETERS = [
     #Create Parameters from previous runs, to validate them

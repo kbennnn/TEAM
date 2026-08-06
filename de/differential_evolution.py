@@ -2,7 +2,7 @@ import random
 from parameters import Parameters
 from gpu_runner import run_one_sim
 from concurrent.futures import ProcessPoolExecutor
-import de_config
+import de.de_config as de_config
 
 
 class Individual(list):

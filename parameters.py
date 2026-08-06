@@ -1,5 +1,5 @@
 from dataclasses import dataclass, asdict, replace
-from simulation import Simulation
+#from simulation import Simulation
 from infection_rules import InfectionRules
 from behavior_model import BehaviorModel
 import os, csv

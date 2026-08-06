@@ -3,7 +3,7 @@ from deap import base, creator, tools
 from parameters import Parameters
 from gpu_runner import run_one_sim
 from concurrent.futures import ProcessPoolExecutor
-import ga_config
+import ga.ga_config as ga_config
 
 
 class GeneticAlgorithm:

@@ -1,5 +1,5 @@
-from genetic_algorithm import GeneticAlgorithm
-import ga_config
+from ga.genetic_algorithm import GeneticAlgorithm
+import ga.ga_config as ga_config
 
 def main():
     ga = GeneticAlgorithm()
