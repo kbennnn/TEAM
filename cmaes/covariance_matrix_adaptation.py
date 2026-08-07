@@ -3,7 +3,7 @@ import cma
 from parameters import Parameters
 from gpu_runner import run_one_sim
 from concurrent.futures import ProcessPoolExecutor
-import cma_config
+import cmaes.cmaes_config as cmaes_config
 
 
 class CMAES:
@@ -33,10 +33,10 @@ class CMAES:
             "bounds": [0.0, 1.0],  # normalized search space bounds
             "verbose": -9,         # silence pycma's own logging
         }
-        if cma_config.POPULATION_SIZE:
-            opts["popsize"] = cma_config.POPULATION_SIZE
+        if cmaes_config.POPULATION_SIZE:
+            opts["popsize"] = cmaes_config.POPULATION_SIZE
 
-        self.es = cma.CMAEvolutionStrategy(x0, cma_config.SIGMA0, opts)
+        self.es = cma.CMAEvolutionStrategy(x0, cmaes_config.SIGMA0, opts)
 
     def decode(self, normalized_vector):
         """Map a normalized [0,1]^n CMA-ES sample to real Parameter values."""
