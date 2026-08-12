@@ -12,7 +12,7 @@ This serves as the base class for more specialized membrane types.
 
 class Membrane:
     # Define provinces as class attributes for consistent reference across all instances
-    NUM_OF_PROV = 3
+    NUM_OF_PROV = 12
     PROVINCES = [f"PV_{i+1}" for i in range(NUM_OF_PROV)]
 
     @classmethod
@@ -348,6 +348,11 @@ class ProvinceMembrane(Membrane):
         if to_vaccinate <= 0:
             return
 
+        # Applica il cap giornaliero: non si supera il limite anche se il target
+        # complessivo permetterebbe di vaccinare di più
+        if daily_cap is not None:
+            to_vaccinate = min(to_vaccinate, daily_cap)
+
         # conta gli anziani sani non ancora vaccinati
         eligible = [ind for ind in all_elderly
                 if ind.status == "Healthy" and not ind.vaccinated]
@@ -358,10 +363,10 @@ class ProvinceMembrane(Membrane):
                 M=self.total_infected(),
                 N=self.total_population()
             )
-        if vaccination_probability >= random.uniform(0, 1):
-            individual.vaccinated = True
-            individual.vaccine_effectiveness, individual.vaccination_days_left \
-                = BehaviorModel.assign_vaccine_effectiveness_with_duration()
+            if vaccination_probability >= random.uniform(0, 1):
+                individual.vaccinated = True
+                individual.vaccine_effectiveness, individual.vaccination_days_left \
+                    = BehaviorModel.assign_vaccine_effectiveness_with_duration()
 
 
     def trigger_infection_progress(self):

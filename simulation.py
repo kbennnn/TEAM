@@ -96,6 +96,17 @@ class Simulation:
     DEATH_REDUCTION_FACTOR = 6  # Factor by which death probability is reduced
     SAME_PROVINCE_PERCENTAGE = 0.8  # Probability of staying in home province
 
+    #AGGIUNTO
+    #we assume that the simulation starts on the 33rd week of the InfluNews report, which is the global minimin for flu incidence
+    #vaccination campaign starts approximately mid october, which is approximately week 10 of the simulation
+    VACCINATION_START_WEEK = 10
+    VACCINATION_START_DAY = 7*(VACCINATION_START_WEEK-1)
+    #vaccination campaign ends approximately with new year's day, which is approximately week 21 of the simulation
+    VACCINATION_END_WEEK = 21
+    VACCINATION_END_DAY = 7*(VACCINATION_END_WEEK)
+
+    #AGGIUNTO
+    DAILY_VACCINATION_CAP_FRACTION = 0.01 #max percentage of elderly vaccinated in a single day
 
 
     def __init__(self):
@@ -358,6 +369,9 @@ class Simulation:
                 if self.QUARANTINE_START_DAY <= 0:
                     self.QUARANTINE_DURATION -= 1
 
+                if self.VACCINATION_START_DAY <= day <= self.VACCINATION_END_DAY:
+                    self.trigger_vaccination_progress(self.VACCINE_COVERAGE)
+
                 # Main simulation loop - hours within day
                 for hour in range(1, hours_per_day + 1):
 
@@ -391,7 +405,6 @@ class Simulation:
                             self.get_to_school()  # Students to schools
                             elderly_outside.extend(self.elderly_to_destination_prov())
                         if 9 <= hour < 17:
-                            self.trigger_vaccination_progress(self.VACCINE_COVERAGE)
                             self.workplace_infections()  # infections in workplaces
                             self.school_infections()  # Infections in schools
                             elderly_outside.extend(self.elderly_to_destination_prov())
@@ -1155,10 +1168,16 @@ class Simulation:
 
         total_elderly_vaccinated = sum(p.total_elderly_vaccinated() for p in self.provinces)
         if total_elderly_vaccinated / total_elderly >= vaccination_coverage:
-            return  # target già raggiunto
+            return  # target già raggiunto globalmente
+
+        # Cap giornaliero totale
+        daily_cap_total = int(self.DAILY_VACCINATION_CAP_FRACTION * total_elderly)
 
         for province in self.provinces:
-            province.vaccinate_population(vaccination_coverage)
+        # Distribuisce il cap proporzionalmente alla popolazione anziana della provincia
+            province_elderly = province.total_elderly_population()
+            province_daily_cap = int(daily_cap_total * province_elderly / total_elderly)
+            province.vaccinate_population(vaccination_coverage, daily_cap=province_daily_cap)
 
 
     def check_for_death(self, individuals):
