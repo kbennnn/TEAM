@@ -44,6 +44,9 @@ class InfectionRules:
     # Behavioral parameters
     PRUDENCE_PARAMETER = 0.9    # Controls social distancing (0=no caution, 1=complete isolation with E2)
 
+    VACCINATED_VIRUS_FRACTION = 0.5 #tiene conto del fatto che il vaccino esiste solo per 3 dei virus simil-influenzali (influenza, Virus respiratorio sinciziale e SARS-COV-2)
+                                     #e che quei 3 virus sono quelli più presenti, circa al 50%
+
     # Configuration update methods
     @classmethod
     def update_incubation_period(cls, new_value: int):
@@ -152,8 +155,9 @@ class InfectionRules:
                 probability_of_infection *= local_infection_ratio * caution_multiplier
 
             # Apply vaccination protection if enabled and individual is vaccinated
-            if InfectionRules.VACCINATION_TRIGGER and individual.vaccination_days_left > 0:
-                probability_of_infection *= (1 - individual.vaccine_effectiveness)
+            if (InfectionRules.VACCINATION_TRIGGER and individual.vaccination_days_left > 0 and individual.age_group == "elderly"): #aggiunto: considera solo gli anziani
+                effective_protection = (individual.vaccine_effectiveness * InfectionRules.VACCINATED_VIRUS_FRACTION) #aggiunto: considera che il vaccino esiste solo per 3 virus su 10
+                probability_of_infection *= (1 - effective_protection)
 
             # Determine if infection occurs
             if probability_of_infection >= random.random():

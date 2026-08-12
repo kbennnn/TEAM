@@ -278,6 +278,25 @@ class ProvinceMembrane(Membrane):
                    self.schools + self.workplaces + self.leisure_centers +
                    self.common_areas + self.hospitals + self.ICUs + self.houses)
 
+    #AGGIUNTO
+    def total_elderly_population(self):
+        """Conta tutti gli anziani presenti nella provincia."""
+        return sum(
+            sum(1 for ind in place.individuals_inside if ind.age_group == "elderly")
+            for place in (self.schools + self.workplaces + self.leisure_centers
+                      + self.common_areas + self.hospitals + self.ICUs + self.houses)
+        )
+
+    #AGGIUNTO
+    def total_elderly_vaccinated(self):
+        """Conta gli anziani vaccinati presenti nella provincia."""
+        return sum(
+            sum(1 for ind in place.individuals_inside
+                if ind.age_group == "elderly" and ind.vaccinated)
+            for place in (self.schools + self.workplaces + self.leisure_centers
+                      + self.common_areas + self.hospitals + self.ICUs + self.houses)
+    )
+
     def total_to_vaccinate(self):
         """
         Count individuals eligible for vaccination across all places.
@@ -300,47 +319,52 @@ class ProvinceMembrane(Membrane):
         return self._cached_population  #uses cache value
 
 
-
     def vaccinate_population(self, coverage_percent):
         """
-        Simulate vaccination campaign for a portion of the eligible population.
-
-        Args:
-            coverage_percent (float): Target percentage of eligible population to vaccinate
-
-        Note:
-            - Vaccination depends on individual willingness (affected by epidemic severity)
-            - Vaccine effectiveness varies and has limited duration
-            - Only healthy, unvaccinated individuals are eligible
+        Vaccina gli anziani sani fino a raggiungere coverage_percent
+        della popolazione anziana totale della provincia.
         """
-        # Get all eligible individuals in the province
-        all_individuals = [
-            individual for place in (self.schools + self.workplaces + self.leisure_centers +
-                                     self.common_areas + self.ICUs + self.houses)
-            for individual in place.individuals_inside
-            if individual.status == "Healthy" and individual.vaccinated is False
+        # Raccoglie tutti gli anziani della provincia
+        all_elderly = [
+            ind for place in (self.schools + self.workplaces + self.leisure_centers
+                          + self.common_areas + self.ICUs + self.houses)
+            for ind in place.individuals_inside
+            if ind.age_group == "elderly"
         ]
 
-        # Randomize vaccination order
-        random.shuffle(all_individuals)
+        elderly_total = len(all_elderly)
+        if elderly_total == 0:
+            return
 
-        # Calculate target number based on coverage percentage
-        num_to_vaccinate = round(coverage_percent * len(all_individuals))
-        num_to_vaccinate = int(num_to_vaccinate)  # Ensure it's an integer
+        # Raccoglie tutti gli anziani vaccinati della provincia
+        elderly_vaccinated = sum(1 for ind in all_elderly if ind.vaccinated)
 
-        # Process each eligible individual up to the target number
-        for individual in all_individuals[:num_to_vaccinate]:
-            # Model willingness based on epidemic severity
+        # conta gli anziani ancora da vaccinare
+        target_count = round(coverage_percent * elderly_total)
+        to_vaccinate = target_count - elderly_vaccinated
+        if to_vaccinate <= 0:
+            return
+
+        # Applica il cap giornaliero: non si supera il limite anche se il target
+        # complessivo permetterebbe di vaccinare di più
+        if daily_cap is not None:
+            to_vaccinate = min(to_vaccinate, daily_cap)
+
+        # conta gli anziani sani non ancora vaccinati
+        eligible = [ind for ind in all_elderly
+                if ind.status == "Healthy" and not ind.vaccinated]
+        random.shuffle(eligible)
+
+        for individual in eligible[:to_vaccinate]:
             vaccination_probability = BehaviorModel.get_vaccination_probability(
                 M=self.total_infected(),
                 N=self.total_population()
             )
-
-            # Apply willingness check
             if vaccination_probability >= random.uniform(0, 1):
                 individual.vaccinated = True
                 individual.vaccine_effectiveness, individual.vaccination_days_left \
                     = BehaviorModel.assign_vaccine_effectiveness_with_duration()
+
 
     def trigger_infection_progress(self):
         """
