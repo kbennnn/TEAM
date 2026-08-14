@@ -21,8 +21,6 @@ class Parameters:
     infection_v1: int = 200
     recovered_antivesp: int = 40
     symptoms_progression: int = 700 
-    # Behaviour model
-    f_star: float = 0.01
 
 
     @classmethod #Random constructor inside bounds
@@ -83,10 +81,6 @@ class Parameters:
         InfectionRules.update_symptoms_progression(
             self.symptoms_progression
         )     
-        # BehaviorModel parameters
-        BehaviorModel.update_f_star(
-            self.f_star
-        )
 
 
     def to_vector(self):
@@ -164,6 +158,4 @@ class Parameters:
         "infection_v1": (50, 300),
         "recovered_antivesp": (10, 70),
         "symptoms_progression": (500, 800),
-        # Behaviour
-        "f_star": (0.0005, 0.2),
     }

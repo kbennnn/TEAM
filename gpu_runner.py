@@ -5,12 +5,12 @@ from concurrent.futures import ProcessPoolExecutor
 import time, os, random, ga.ga_config as ga_config
 import numpy as np
 
-def set_seed():
-    random.seed(ga_config.RANDOM_SEED)
-    np.random.seed(ga_config.RANDOM_SEED)
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
 
-def run_one_sim(idx, params: Parameters, days, generation):
-    set_seed()
+def run_one_sim(idx, params: Parameters, days, generation, seed = ga_config.RANDOM_SEED[0]):
+    set_seed(seed)
     t0 = time.time()
     # Print and apply parameters
     print(params)
@@ -37,7 +37,7 @@ def run_one_sim(idx, params: Parameters, days, generation):
 
 
 def run_repeated(params: Parameters, rep: int, days: int, gen: int = -1, max_workers: int = 3):
-    #Launch the same simulation with generation -1 in ordeer to check the variance of the results
+    #Launch the same simulation with generation -1 and 3 different seeds in order to check the variance of the results
     results = []
     with ProcessPoolExecutor(max_workers=max_workers) as exe:
         futures = []
@@ -49,7 +49,8 @@ def run_repeated(params: Parameters, rep: int, days: int, gen: int = -1, max_wor
                     idx,
                     params,
                     days,
-                    gen
+                    gen,
+                    ga_config.RANDOM_SEED[idx]
                 )
             )
 
