@@ -150,7 +150,7 @@ class Parameters:
         "hospitalization_prob": (0.0435, 0.08), #was  (0.01, 0.10), 
         "v1_growth_prob": (0.033, 0.053), #was (0.01, 0.06),
         "antiv_kill_prob": (0.0007, 0.0059), #was (0.0001, 0.01),
-        "prudence_parameter": (), #was (0.6, 1.0),
+        "prudence_parameter": (0.58, 0.76), #was (0.6, 1.0),
         "antivesp_young_ratio": (3, 7), #was (2, 10),
         "antivesp_adult_ratio": (1,2), #was (1, 4),
         # Viral load thresholds 
