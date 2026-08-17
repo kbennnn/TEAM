@@ -147,15 +147,15 @@ class Parameters:
 
     PARAMETER_BOUNDS = {
         # Infection
-        "hospitalization_prob": (0.01, 0.10),
-        "v1_growth_prob": (0.01, 0.06),
-        "antiv_kill_prob": (0.0001, 0.01),
-        "prudence_parameter": (0.6, 1.0),
-        "antivesp_young_ratio": (2, 10),
-        "antivesp_adult_ratio": (1, 4),
+        "hospitalization_prob": (0.0435, 0.08), #was  (0.01, 0.10), 
+        "v1_growth_prob": (0.033, 0.053), #was (0.01, 0.06),
+        "antiv_kill_prob": (0.0007, 0.0059), #was (0.0001, 0.01),
+        "prudence_parameter": (), #was (0.6, 1.0),
+        "antivesp_young_ratio": (3, 7), #was (2, 10),
+        "antivesp_adult_ratio": (1,2), #was (1, 4),
         # Viral load thresholds 
-        "incubation_v1": (1, 30),
-        "infection_v1": (50, 300),
-        "recovered_antivesp": (10, 70),
-        "symptoms_progression": (500, 800),
+        "incubation_v1": (15, 28), #was (1, 30),
+        "infection_v1": (140, 240), #was (50, 300),
+        "recovered_antivesp": (26, 42), #was (10, 70),
+        "symptoms_progression": (630, 743), #was (500, 800),
     }
