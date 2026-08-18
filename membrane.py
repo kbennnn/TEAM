@@ -12,7 +12,7 @@ This serves as the base class for more specialized membrane types.
 
 class Membrane:
     # Define provinces as class attributes for consistent reference across all instances
-    NUM_OF_PROV = 3
+    NUM_OF_PROV = 5
     PROVINCES = [f"PV_{i+1}" for i in range(NUM_OF_PROV)]
 
     @classmethod

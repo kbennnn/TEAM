@@ -77,7 +77,7 @@ class Simulation:
     # Class constants and default parameters
     HIDE_PRINT = True
     PROVINCES = Membrane.PROVINCES
-    TOTAL_POPULATION = 10000
+    TOTAL_POPULATION = 25000
     VACCINE_COVERAGE = 0.2 #MODIFICATO
     INIT_INFECTIONS_PER_PROVINCE = int(TOTAL_POPULATION/len(PROVINCES)*0.3/100) #MODIFICATO
     YOUNG_PERCENTAGE = 0.2  # Population aged 0-20 years #MODIFICATO
@@ -295,9 +295,9 @@ class Simulation:
                     infected_individuals.append(individual)
                     available_individuals.remove(individual)
 
-    def run_simulation(self, GPU_idx, days=7, hours_per_day=24, generation=0):
+    def run_simulation(self, GPU_idx, days=7, hours_per_day=24, generation=0, algorithm=""):
         """
-        Execute the complete simulation for the specified duration.
+        Execute the complete simulation for the specified duration., 
 
         This method:
         1. Sets up data collection and reporting infrastructure
@@ -614,7 +614,7 @@ class Simulation:
 
  
         directory, filename = os.path.split(csv_filename)
-        weekly_csv_filename = os.path.join(directory, f"weekly_{filename}")
+        weekly_csv_filename = os.path.join(directory, f"{algorithm}_weekly_{filename}")
 
         weekly_data.to_csv(
             weekly_csv_filename,
@@ -649,10 +649,11 @@ class Simulation:
         data["Deaths (%)"] = (data["Deaths"] / self.TOTAL_POPULATION) * 100
 
 
+
         # Line plots
         def create_line_chart(x, y, title, x_label, y_label, base_filename, color):
             simulation_name = os.path.splitext(os.path.basename(csv_filename))[0]  # File name without extension
-            filename = f"{base_filename}_{simulation_name}.png"  # Graph name
+            filename = f"{algorithm}_{base_filename}_{simulation_name}.png" # Graph name
             output_file = os.path.join(output_dir, filename)  # Full file path
             plt.figure(figsize=(10, 6))
             plt.plot(x, y, color=color, linewidth=2)  # Specify the color
@@ -677,31 +678,6 @@ class Simulation:
             color="red"
         )
 
-        # Line Chart 2: Day vs Variation of Infected
-        '''
-        create_line_chart(
-            x=data["Day"],
-            y=data["Variation of Infected (%)"],
-            title="Variation of Infected Over Days (%)",
-            x_label="Days",
-            y_label="Variation of Infected (%)",
-            base_filename="variation_of_infected_line_chart",
-            color="blue"
-        )
-
-        # Line Chart 3: Day vs Deaths
-        create_line_chart(
-            x=data["Day"],
-            y=data["Deaths (%)"],
-            title="Deaths Over Days (%)",
-            x_label="Days",
-            y_label="Deaths (%)",
-            base_filename="deaths_line_chart",
-            color="green"
-        )
-        '''
-
-
         # Line Chart 4: Week vs Incidence
         create_line_chart(
             x=weekly_plot_data["Week"],
@@ -712,6 +688,8 @@ class Simulation:
             base_filename="weekly_incidence_line_chart",
             color="blue"
         )
+
+        os.remove(csv_filename) #delete the daily csv
 
         return weekly_csv_filename
 

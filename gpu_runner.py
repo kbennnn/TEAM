@@ -9,7 +9,7 @@ def set_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
 
-def run_one_sim(idx, params: Parameters, days, generation, seed = ga_config.RANDOM_SEED[0]):
+def run_one_sim(idx, params: Parameters, days, generation, algorithm, seed = ga_config.RANDOM_SEED[0],):
     set_seed(seed)
     t0 = time.time()
     # Print and apply parameters
@@ -18,7 +18,7 @@ def run_one_sim(idx, params: Parameters, days, generation, seed = ga_config.RAND
     # Run simulation
     sim = Simulation()
     sim.create_scenario()
-    weekly_csv = sim.run_simulation(days=days, GPU_idx=idx, generation=generation)
+    weekly_csv = sim.run_simulation(days=days, GPU_idx=idx, generation=generation, algorithm=algorithm)
     # Evaluate result against the 4 seasons, use the "sum" metric for this run
     evaluator = CurveEvaluator({
         "2022": "lombardy/incidence_2022-2023.csv",
@@ -41,6 +41,7 @@ def run_repeated(params: Parameters, rep: int, days: int, gen: int = -1, max_wor
     results = []
     with ProcessPoolExecutor(max_workers=max_workers) as exe:
         futures = []
+        algorithm=""
 
         for idx in range(rep):
             futures.append(
@@ -50,6 +51,7 @@ def run_repeated(params: Parameters, rep: int, days: int, gen: int = -1, max_wor
                     params,
                     days,
                     gen,
+                    algorithm,
                     ga_config.RANDOM_SEED[idx]
                 )
             )

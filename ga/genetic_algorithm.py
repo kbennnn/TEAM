@@ -81,6 +81,7 @@ class GeneticAlgorithm:
     def evaluate_population(self, population, days, generation):
         with ProcessPoolExecutor(max_workers=ga_config.POPULATION_SIZE) as exe:
             futures = []
+            algorithm_name = "GA"
             for idx, individual in enumerate(population):
 
                 params = Parameters.from_vector(individual)
@@ -90,7 +91,8 @@ class GeneticAlgorithm:
                         idx,
                         params,
                         days,
-                        generation
+                        generation,
+                        algorithm_name
                     )
                 )
 

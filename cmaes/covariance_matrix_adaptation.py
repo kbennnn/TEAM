@@ -53,6 +53,7 @@ class CMAES:
     def evaluate(self, normalized_population, days, generation):
         with ProcessPoolExecutor(max_workers=len(normalized_population)) as exe:
             futures = []
+            algorithm_name = "CMAES"
             for idx, normalized_vector in enumerate(normalized_population):
 
                 vector = self.decode(normalized_vector)
@@ -63,7 +64,8 @@ class CMAES:
                         idx,
                         params,
                         days,
-                        generation
+                        generation,
+                        algorithm_name
                     )
                 )
 

@@ -19,7 +19,7 @@ class InfectionRules:
     ICU_PROB = 0.05             # Probability of direct ICU admission with E4 symptoms
 
     # Virus dynamics
-    CAUTION_FACTOR = 0.1      # Impact of caution on infection spread
+    #CAUTION_FACTOR = 0.1      # Impact of caution on infection spread
     V1_GROWTH_PROB = 0.035      # Probability of viral load growth
     ANTIV_KILL_PROB = 0.001     # Probability of antibodies neutralizing virus
 
@@ -64,9 +64,9 @@ class InfectionRules:
     def update_icu_prob(cls, new_value: int):
         cls.ICU_PROB = new_value
 
-    @classmethod
-    def update_caution_factor(cls, new_value: float):
-        cls.CAUTION_FACTOR = new_value
+    #@classmethod
+    #def update_caution_factor(cls, new_value: float):
+    #    cls.CAUTION_FACTOR = new_value
 
     @classmethod
     def update_prudence_parameter(cls, new_value: float):
@@ -159,8 +159,8 @@ class InfectionRules:
             # Apply behavioral adaptation factor if enabled
             if InfectionRules.BEHAVIOR_TRIGGER:
                 local_infection_ratio = number_of_infected / total_in_membrane
-                caution_multiplier = BehaviorModel.caution_factor(m, n, InfectionRules.CAUTION_FACTOR)
-                probability_of_infection *= local_infection_ratio * caution_multiplier
+                #caution_multiplier = BehaviorModel.caution_factor(m, n, InfectionRules.CAUTION_FACTOR)
+                probability_of_infection *= local_infection_ratio #* caution_multiplier
 
             # Apply vaccination protection if enabled and individual is vaccinated
             if InfectionRules.VACCINATION_TRIGGER and individual.vaccination_days_left > 0:

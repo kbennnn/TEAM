@@ -39,7 +39,7 @@ class BehaviorModel:
         """Update reference infection rate threshold."""
         cls.VACCINE_EFFECTIVENESS_UPPER_BOUND = new_value
 
-    @staticmethod
+    '''    @staticmethod
     def caution_factor(M, N, a):
         """
         Calculate individuals' caution level as infection rates change.
@@ -53,6 +53,7 @@ class BehaviorModel:
             float: Caution factor between 0-1 (lower when more infected)
         """
         return 1 / (1 + a * M / N) if N else 0.0
+        '''
 
     @staticmethod
     def vaccination_willingness(M, N):

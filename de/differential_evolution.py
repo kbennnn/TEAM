@@ -41,6 +41,7 @@ class DifferentialEvolution:
 
         with ProcessPoolExecutor(max_workers=len(to_evaluate)) as exe:
             futures = []
+            algorithm_name = "DE"
             for idx, individual in enumerate(to_evaluate):
 
                 params = Parameters.from_vector(individual)
@@ -50,7 +51,8 @@ class DifferentialEvolution:
                         idx,
                         params,
                         days,
-                        generation
+                        generation,
+                        algorithm_name
                     )
                 )
 

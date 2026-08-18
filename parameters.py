@@ -159,3 +159,20 @@ class Parameters:
         "recovered_antivesp": (26, 42), #was (10, 70),
         "symptoms_progression": (630, 743), #was (500, 800),
     }
+    '''
+    #New ranges after the first tuning on bounds
+    PARAMETER_BOUNDS = {
+        # Infection
+        "hospitalization_prob": (0.0525, 0.0723),
+        "v1_growth_prob": (0.041, 0.052),
+        "antiv_kill_prob": (0.002, 0.0046),
+        "prudence_parameter": (0.6, 0.67),
+        "antivesp_young_ratio": (4, 6), 
+        "antivesp_adult_ratio": (1,2),
+        # Viral load thresholds 
+        "incubation_v1": (16, 26), 
+        "infection_v1": (158, 208), 
+        "recovered_antivesp": (29, 38), 
+        "symptoms_progression": (680, 740), 
+    }
+    '''
