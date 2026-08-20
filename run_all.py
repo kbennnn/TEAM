@@ -1,3 +1,4 @@
+#A code for run the three algorithm together
 import subprocess
 
 commands = [
