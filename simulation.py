@@ -354,9 +354,9 @@ class Simulation:
                         else:
                             p.trigger_infection_progress()  # Simple state progression
 
-                        #AGGIUNTO
-                        if day % 60 == 0:                    # ogni 60 giorni...
-                            p.decay_all_vaccine_effectiveness()  # ...dimezza l'efficacia
+                        #ADDED: every 60 days halves vaccine efficiency
+                        if day % 60 == 0:                    
+                            p.decay_all_vaccine_effectiveness()  
 
                             
                 else:
