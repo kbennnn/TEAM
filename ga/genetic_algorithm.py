@@ -3,7 +3,7 @@ from deap import base, creator, tools
 from parameters import Parameters
 from gpu_runner import run_one_sim
 from concurrent.futures import ProcessPoolExecutor
-import ga_config
+import ga.ga_config as ga_config
 
 
 class GeneticAlgorithm:
@@ -81,6 +81,7 @@ class GeneticAlgorithm:
     def evaluate_population(self, population, days, generation):
         with ProcessPoolExecutor(max_workers=ga_config.POPULATION_SIZE) as exe:
             futures = []
+            algorithm_name = "GA"
             for idx, individual in enumerate(population):
 
                 params = Parameters.from_vector(individual)
@@ -90,7 +91,8 @@ class GeneticAlgorithm:
                         idx,
                         params,
                         days,
-                        generation
+                        generation,
+                        algorithm_name
                     )
                 )
 
@@ -98,6 +100,13 @@ class GeneticAlgorithm:
 
                 idx, score, elapsed, pid = future.result()
                 individual.fitness.values = (score,)
+                
+        # Print best individual of the generation
+        best = tools.selBest(population, 1)[0]
+        print(
+            f"Generation {generation}: "
+            f"best score = {best.fitness.values[0]:.6f}"
+        )
 
 
     def mutate_uniform(self, individual):

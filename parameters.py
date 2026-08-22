@@ -1,5 +1,5 @@
 from dataclasses import dataclass, asdict, replace
-from simulation import Simulation
+#from simulation import Simulation
 from infection_rules import InfectionRules
 from behavior_model import BehaviorModel
 import os, csv
@@ -14,16 +14,16 @@ class Parameters:
     v1_growth_prob: float = 0.035
     antiv_kill_prob: float = 0.001
     prudence_parameter: float = 0.9
+    antivesp_young_ratio: int = 6
+    antivesp_adult_ratio: int = 3
     # Viral load thresholds
     incubation_v1: int = 5
     infection_v1: int = 200
     recovered_antivesp: int = 40
     symptoms_progression: int = 700 
-    # Behaviour model
-    f_star: float = 0.01
 
 
-    @classmethod
+    @classmethod #Random constructor inside bounds
     def random(cls):
         params = cls()
 
@@ -36,6 +36,14 @@ class Parameters:
 
             setattr(params, name, value)
 
+        return params
+
+
+    @classmethod #Constructor from dictionary (lists of fixed parameters)
+    def from_dict(cls, values):
+        params = cls()
+        for k, v in values.items():
+            setattr(params, k, v)
         return params
 
 
@@ -54,6 +62,12 @@ class Parameters:
         InfectionRules.update_prudence_parameter(
             self.prudence_parameter
         )
+        InfectionRules.update_antivesp_young_ratio(
+            self.antivesp_young_ratio
+        )
+        InfectionRules.update_antivesp_adult_ratio(
+            self.antivesp_adult_ratio
+        )        
         # Viral load thresholds
         InfectionRules.update_incubation_v1(
             self.incubation_v1
@@ -67,10 +81,6 @@ class Parameters:
         InfectionRules.update_symptoms_progression(
             self.symptoms_progression
         )     
-        # BehaviorModel parameters
-        BehaviorModel.update_f_star(
-            self.f_star
-        )
 
 
     def to_vector(self):
@@ -94,19 +104,30 @@ class Parameters:
         return params
 
 
-    def save_result(self, simulation_csv: str, score: float):
+
+
+
+
+
+
+    def save_result(self, simulation_csv: str, result: dict):
         result_file = "curve_score.csv"
 
-        simulation_name = os.path.basename(simulation_csv) #extract the name of the simulation
+        simulation_name = os.path.basename(simulation_csv)  # extract the name of the simulation
 
         row = {
             "simulation": simulation_name,
             **asdict(self),        # add all parameters
-            "score": score
+            "score_sum": result["sum"],
+            "score_minimax": result["minimax"],
+            "minimax_year": result["minimax_year"],
+            "score_maxmax": result["maxmax"],
+            "maxmax_year": result["maxmax_year"],
+            **{f"mse_{year}": mse for year, mse in result["per_season"].items()},
         }
 
         file_exists = os.path.exists(result_file)
-
+        
         with open(result_file, "a", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=row.keys())
 
@@ -114,6 +135,7 @@ class Parameters:
                 writer.writeheader()
 
             writer.writerow(row)
+
 
 
     def __str__(self): # for printing the values
@@ -125,15 +147,32 @@ class Parameters:
 
     PARAMETER_BOUNDS = {
         # Infection
-        "hospitalization_prob": (0.01, 0.10),
-        "v1_growth_prob": (0.01, 0.06),
-        "antiv_kill_prob": (0.0001, 0.01),
-        "prudence_parameter": (0.6, 1.0),
+        "hospitalization_prob": (0.0435, 0.08), #was  (0.01, 0.10), 
+        "v1_growth_prob": (0.033, 0.053), #was (0.01, 0.06),
+        "antiv_kill_prob": (0.0007, 0.0059), #was (0.0001, 0.01),
+        "prudence_parameter": (0.58, 0.76), #was (0.6, 1.0),
+        "antivesp_young_ratio": (3, 7), #was (2, 10),
+        "antivesp_adult_ratio": (1,2), #was (1, 4),
         # Viral load thresholds 
-        "incubation_v1": (1, 30),
-        "infection_v1": (50, 300),
-        "recovered_antivesp": (10, 70),
-        "symptoms_progression": (500, 800),
-        # Behaviour
-        "f_star": (0.0005, 0.2),
+        "incubation_v1": (15, 28), #was (1, 30),
+        "infection_v1": (140, 240), #was (50, 300),
+        "recovered_antivesp": (26, 42), #was (10, 70),
+        "symptoms_progression": (630, 743), #was (500, 800),
     }
+    '''
+    #New ranges after the first tuning on bounds
+    PARAMETER_BOUNDS = {
+        # Infection
+        "hospitalization_prob": (0.0525, 0.0723),
+        "v1_growth_prob": (0.041, 0.052),
+        "antiv_kill_prob": (0.002, 0.0046),
+        "prudence_parameter": (0.6, 0.67),
+        "antivesp_young_ratio": (4, 6), 
+        "antivesp_adult_ratio": (1,2),
+        # Viral load thresholds 
+        "incubation_v1": (16, 26), 
+        "infection_v1": (158, 208), 
+        "recovered_antivesp": (29, 38), 
+        "symptoms_progression": (680, 740), 
+    }
+    '''

@@ -291,24 +291,24 @@ class Simulation:
 
         # Introduce initial infections
         for province in self.provinces:
-            infected_individuals = set()
-            available_individuals = set()
+            infected_individuals = []
+            available_individuals = []
 
             for houses in province.houses: # Get all the individuals from houses
                 for individual in houses.individuals_inside:
-                    available_individuals.add(individual)
+                    available_individuals.append(individual)
 
             for _ in range(self.INIT_INFECTIONS_PER_PROVINCE):
-                available_individuals_list = list(available_individuals)
+                #available_individuals_list = list(available_individuals)
                 if available_individuals:
-                    individual = random.choice(available_individuals_list)
+                    individual = random.choice(available_individuals)
                     individual.start_infection()
-                    infected_individuals.add(individual)
+                    infected_individuals.append(individual)
                     available_individuals.remove(individual)
 
-    def run_simulation(self, GPU_idx, days=3, hours_per_day=24, generation=0):
+    def run_simulation(self, GPU_idx, days=7, hours_per_day=24, generation=0, algorithm=""):
         """
-        Execute the complete simulation for the specified duration.
+        Execute the complete simulation for the specified duration., 
 
         This method:
         1. Sets up data collection and reporting infrastructure
@@ -374,7 +374,6 @@ class Simulation:
                     # First day initialization and reporting
                     #print("prudence parameter of", InfectionRules.PRUDENCE_PARAMETER,
                     #      " i have a factor of * ", (1 - InfectionRules.PRUDENCE_PARAMETER)**2)
-                    print("con", len(self.PROVINCES) ," provincie e ", self.TOTAL_POPULATION ," di popolazione ho numero di infetti iniziali per provincia di", self.INIT_INFECTIONS_PER_PROVINCE, " -> 0.3%")
                     self.currently_infected = self.get_infected_individuals()
                     self.yesterday_infected = len(self.currently_infected)
 
@@ -599,15 +598,13 @@ class Simulation:
 
 
         # Post-simulation reporting and visualization
-        print("Simulation results saved to:", csv_filename)
+        #print("Simulation results saved to:", csv_filename)
         # Generate visualization graphs from simulation data
         data = pd.read_csv(csv_filename)
 
         #----Create weekly aggregated CSV and graphs
         weekly_data = data.iloc[:len(data) - len(data) % 7].copy()
-        weekly_data["Week"] = (
-            weekly_data["Day"] // 7
-        )
+        weekly_data["Week"] = ((weekly_data["Day"] - 1) // 7) 
 
         weekly_data = weekly_data.groupby("Week").agg({
             "Variation of Infected": "sum",
@@ -630,7 +627,7 @@ class Simulation:
 
  
         directory, filename = os.path.split(csv_filename)
-        weekly_csv_filename = os.path.join(directory, f"weekly_{filename}")
+        weekly_csv_filename = os.path.join(directory, f"{algorithm}_weekly_{filename}")
 
         weekly_data.to_csv(
             weekly_csv_filename,
@@ -665,10 +662,11 @@ class Simulation:
         data["Deaths (%)"] = (data["Deaths"] / self.TOTAL_POPULATION) * 100
 
 
+
         # Line plots
         def create_line_chart(x, y, title, x_label, y_label, base_filename, color):
             simulation_name = os.path.splitext(os.path.basename(csv_filename))[0]  # File name without extension
-            filename = f"{base_filename}_{simulation_name}.png"  # Graph name
+            filename = f"{algorithm}_{base_filename}_{simulation_name}.png" # Graph name
             output_file = os.path.join(output_dir, filename)  # Full file path
             plt.figure(figsize=(10, 6))
             plt.plot(x, y, color=color, linewidth=2)  # Specify the color
@@ -693,31 +691,6 @@ class Simulation:
             color="red"
         )
 
-        # Line Chart 2: Day vs Variation of Infected
-        '''
-        create_line_chart(
-            x=data["Day"],
-            y=data["Variation of Infected (%)"],
-            title="Variation of Infected Over Days (%)",
-            x_label="Days",
-            y_label="Variation of Infected (%)",
-            base_filename="variation_of_infected_line_chart",
-            color="blue"
-        )
-
-        # Line Chart 3: Day vs Deaths
-        create_line_chart(
-            x=data["Day"],
-            y=data["Deaths (%)"],
-            title="Deaths Over Days (%)",
-            x_label="Days",
-            y_label="Deaths (%)",
-            base_filename="deaths_line_chart",
-            color="green"
-        )
-        '''
-
-
         # Line Chart 4: Week vs Incidence
         create_line_chart(
             x=weekly_plot_data["Week"],
@@ -728,6 +701,8 @@ class Simulation:
             base_filename="weekly_incidence_line_chart",
             color="blue"
         )
+
+        os.remove(csv_filename) #delete the daily csv
 
         return weekly_csv_filename
 
@@ -1265,7 +1240,7 @@ class Simulation:
             province.vaccinate_population(vaccination_coverage, daily_cap=province_daily_cap)
 
     def check_for_death(self, individuals):
-        for individual in individuals:
+        for individual in sorted(individuals, key=lambda x: x.number):
             if InfectionRules.VIRAL_LOAD:
                 if individual.symptoms == "E3":
                     death_probability = 0.0001 # Is 0.0005 in paper and Is 0.00025 in rules.xml

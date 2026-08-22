@@ -19,21 +19,24 @@ class InfectionRules:
     ICU_PROB = 0.05             # Probability of direct ICU admission with E4 symptoms
 
     # Virus dynamics
-    CAUTION_FACTOR = 0.1      # Impact of caution on infection spread
+    #CAUTION_FACTOR = 0.1      # Impact of caution on infection spread
     V1_GROWTH_PROB = 0.035      # Probability of viral load growth
     ANTIV_KILL_PROB = 0.001     # Probability of antibodies neutralizing virus
 
     # Age and symptom-based antibody production probabilities
     # Format: ANTIVESP_[AGE]_[SYMPTOM LEVEL]_PROB
-    ANTIVESP_YOUNG_E2_PROB = 0.024
-    ANTIVESP_ADULT_E2_PROB = 0.012
+    ANTIVESP_YOUNG_RATIO = 6
+    ANTIVESP_ADULT_RATIO = 3
     ANTIVESP_ELDERLY_E2_PROB = 0.004
-    ANTIVESP_YOUNG_E3_PROB = 0.018
-    ANTIVESP_ADULT_E3_PROB = 0.009
+    ANTIVESP_YOUNG_E2_PROB = ANTIVESP_ELDERLY_E2_PROB * ANTIVESP_YOUNG_RATIO
+    ANTIVESP_ADULT_E2_PROB = ANTIVESP_ELDERLY_E2_PROB * ANTIVESP_ADULT_RATIO
     ANTIVESP_ELDERLY_E3_PROB = 0.003
-    ANTIVESP_YOUNG_E4_PROB = 0.012
-    ANTIVESP_ADULT_E4_PROB = 0.006
+    ANTIVESP_YOUNG_E3_PROB = ANTIVESP_ELDERLY_E3_PROB * ANTIVESP_YOUNG_RATIO
+    ANTIVESP_ADULT_E3_PROB =  ANTIVESP_ELDERLY_E3_PROB * ANTIVESP_ADULT_RATIO
     ANTIVESP_ELDERLY_E4_PROB = 0.002
+    ANTIVESP_YOUNG_E4_PROB = ANTIVESP_ELDERLY_E4_PROB * ANTIVESP_YOUNG_RATIO
+    ANTIVESP_ADULT_E4_PROB =  ANTIVESP_ELDERLY_E4_PROB * ANTIVESP_ADULT_RATIO
+    
 
     # Viral load thresholds
     INCUBATION_V1 = 5           # Initial viral load during incubation
@@ -64,9 +67,9 @@ class InfectionRules:
     def update_icu_prob(cls, new_value: int):
         cls.ICU_PROB = new_value
 
-    @classmethod
-    def update_caution_factor(cls, new_value: float):
-        cls.CAUTION_FACTOR = new_value
+    #@classmethod
+    #def update_caution_factor(cls, new_value: float):
+    #    cls.CAUTION_FACTOR = new_value
 
     @classmethod
     def update_prudence_parameter(cls, new_value: float):
@@ -95,6 +98,14 @@ class InfectionRules:
     @classmethod
     def update_antiv_kill_prob(cls, new_value: bool):
         cls.ANTIV_KILL_PROB = new_value
+
+    @classmethod
+    def update_antivesp_young_ratio(cls, new_value: bool):
+        cls.ANTIVESP_YOUNG_RATIO = new_value
+
+    @classmethod
+    def update_antivesp_adult_ratio(cls, new_value: bool):
+        cls.ANTIVESP_ADULT_RATIO = new_value
 
 
     # Viral load thresholds
@@ -151,8 +162,8 @@ class InfectionRules:
             # Apply behavioral adaptation factor if enabled
             if InfectionRules.BEHAVIOR_TRIGGER:
                 local_infection_ratio = number_of_infected / total_in_membrane
-                caution_multiplier = BehaviorModel.caution_factor(m, n, InfectionRules.CAUTION_FACTOR)
-                probability_of_infection *= local_infection_ratio * caution_multiplier
+                #caution_multiplier = BehaviorModel.caution_factor(m, n, InfectionRules.CAUTION_FACTOR)
+                probability_of_infection *= local_infection_ratio #* caution_multiplier
 
             # Apply vaccination protection if enabled and individual is vaccinated
             if (InfectionRules.VACCINATION_TRIGGER and individual.vaccination_days_left > 0 and individual.age_group == "elderly"): #aggiunto: considera solo gli anziani
@@ -183,7 +194,7 @@ def handle_infection(individuals, v1_growth_prob, antiv_kill_prob):
         v1_growth_prob: Probability of viral load increase per unit
         antiv_kill_prob: Probability of antibody neutralizing virus
     """
-    for individual in individuals:
+    for individual in sorted(individuals, key=lambda x: x.number):
         if individual.v1 <= 0:
             continue
 
@@ -319,7 +330,7 @@ def handle_symptoms(individuals):
     Args:
         individuals: List of Individual objects to process
     """
-    for individual in individuals:
+    for individual in sorted(individuals, key=lambda x: x.number):
         if individual.inf >= InfectionRules.SYMPTOMS_PROGRESSION:
             # Symptom progression probabilities (values differ from paper)
             if individual.symptoms == "E3" and random.random() < 0.001:  # Paper: 0.0025
