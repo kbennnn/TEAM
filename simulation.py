@@ -306,7 +306,7 @@ class Simulation:
                     infected_individuals.add(individual)
                     available_individuals.remove(individual)
 
-    def run_simulation(self, GPU_idx, days=7, hours_per_day=24, generation=0):
+    def run_simulation(self, GPU_idx, days=3, hours_per_day=24, generation=0):
         """
         Execute the complete simulation for the specified duration.
 

@@ -319,7 +319,7 @@ class ProvinceMembrane(Membrane):
         return self._cached_population  #uses cache value
 
 
-    def vaccinate_population(self, coverage_percent):
+    def vaccinate_population(self, coverage_percent, daily_cap=None):
         """
         Vaccina gli anziani sani fino a raggiungere coverage_percent
         della popolazione anziana totale della provincia.
