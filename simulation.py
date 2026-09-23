@@ -584,8 +584,7 @@ class Simulation:
                     )
 
 
-        # Post-simulation reporting and visualization
-        #print("Simulation results saved to:", csv_filename)
+        ##### Post-simulation reporting and visualization #####
         # Generate visualization graphs from simulation data
         data = pd.read_csv(csv_filename)
 
@@ -637,9 +636,9 @@ class Simulation:
         weekly_plot_data["Deaths (%)"] = (
             weekly_plot_data["Deaths"] / self.TOTAL_POPULATION
         ) * 100
-        #----
+        #####
 
-
+        # Output directory for graphs
         output_dir = os.path.join(os.path.dirname(csv_filename), "graphs")
         os.makedirs(output_dir, exist_ok=True)  # Creates folder if does not exist
 
@@ -649,8 +648,7 @@ class Simulation:
         data["Deaths (%)"] = (data["Deaths"] / self.TOTAL_POPULATION) * 100
 
 
-
-        # Line plots
+        ##### Line plots #####
         def create_line_chart(x, y, title, x_label, y_label, base_filename, color):
             simulation_name = os.path.splitext(os.path.basename(csv_filename))[0]  # File name without extension
             filename = f"{algorithm}_{base_filename}_{simulation_name}.png" # Graph name
@@ -667,6 +665,36 @@ class Simulation:
             plt.savefig(output_file)
             plt.close()
 
+
+        def create_comparison_line_chart(x, y, historical_curves, title, x_label,  y_label, base_filename, color):
+            simulation_name = os.path.splitext(
+                os.path.basename(csv_filename)
+            )[0]
+
+            filename = f"{algorithm}_{base_filename}_{simulation_name}.png"
+            output_file = os.path.join(output_dir, filename)
+            plt.figure(figsize=(10, 6))
+
+            # Simulation curve
+            plt.plot(x, y, color=color, linewidth=2, label="Simulation")
+
+            # Historical curves
+            for historical_x, historical_y, historical_label in historical_curves:
+                plt.plot(historical_x, historical_y, linewidth=1.5, alpha=0.7, label=historical_label)
+
+            plt.title(title, fontsize=16)
+            plt.xlabel(x_label, fontsize=14)
+            plt.ylabel(y_label, fontsize=14)
+            plt.grid(True, linestyle='--', alpha=0.6)
+            plt.xticks(fontsize=12, rotation=45)
+            plt.yticks(fontsize=12)
+            plt.legend(fontsize=10)
+            plt.tight_layout()
+            plt.savefig(output_file)
+            plt.close()
+
+        
+
         # Line Chart 1: Day vs Prevalence
         create_line_chart(
             x=data["Day"],
@@ -678,14 +706,38 @@ class Simulation:
             color="red"
         )
 
-        # Line Chart 4: Week vs Incidence
+        # Line Chart 2: Day vs Incidence
         create_line_chart(
+            x=data["Day"],
+            y=data["Variation of Infected (%)"],
+            title="Daily Incidence (%)",
+            x_label="Days",
+            y_label="New Infected (%)",
+            base_filename="daily_incidence_line_chart",
+            color="green"
+        )
+
+        # Line Chart 3: Week vs Incidence
+        historical_2022_2023 = pd.read_csv("lombardy/incidence_2022-2023.csv")
+        historical_2023_2024 = pd.read_csv("lombardy/incidence_2023-2024.csv")
+        historical_2024_2025 = pd.read_csv("lombardy/incidence_2024-2025.csv")
+        historical_2025_2026 = pd.read_csv("lombardy/incidence_2025-2026.csv")
+
+        historical_curves = [
+            (historical_2022_2023["progressivo_settimana"], historical_2022_2023["incidenza"], "2022-2023"),
+            (historical_2023_2024["progressivo_settimana"], historical_2023_2024["incidenza"], "2023-2024"),
+            (historical_2024_2025["progressivo_settimana"], historical_2024_2025["incidenza"], "2024-2025"),
+            (historical_2025_2026["progressivo_settimana"], historical_2025_2026["incidenza"], "2025-2026" )
+        ]
+
+        create_comparison_line_chart(
             x=weekly_plot_data["Week"],
             y=weekly_plot_data["Variation of Infected (%)"],
+            historical_curves=historical_curves,
             title="Weekly Incidence (%)",
             x_label="Weeks",
             y_label="Incidence (%)",
-            base_filename="weekly_incidence_line_chart",
+            base_filename="weekly_incidence_comparison_line_chart",
             color="blue"
         )
 
