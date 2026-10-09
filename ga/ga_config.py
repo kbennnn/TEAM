@@ -1,6 +1,6 @@
 # Simulation
 RANDOM_SEED = [42, 999, 1234]
-DAYS = 365
+DAYS = 364
 
 # Population
 POPULATION_SIZE = 20
