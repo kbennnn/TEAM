@@ -1,0 +1,26 @@
+VACCINATION REPORT
+==================
+
+Simulation: simulation_10000_3_365_-1_-1___20261004_165903
+Initial elderly population: 3000
+
+1. VACCINATION COVERAGE
+Expected target coverage: 0.5500
+Final cumulative coverage: 0.1977
+Total elderly vaccinated at least once: 593
+
+2. TARGET COVERAGE DAY
+Target coverage reached: NO
+Expected campaign end day: 147
+
+3. DAILY VACCINATIONS
+Mean vaccinations per campaign day: 7.06
+Mean fraction of elderly vaccinated per campaign day: 0.0024 (0.24%)
+Configured daily cap fraction: 0.0100 (1.00%)
+Theoretical daily cap in individuals: 30
+
+4. VACCINE DURATION
+Configured mean duration: 210.00 days
+Observed mean assigned duration: 209.98 days
+Minimum assigned duration: 207 days
+Maximum assigned duration: 213 days
