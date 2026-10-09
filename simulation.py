@@ -22,6 +22,9 @@ from membrane import (
 from movement_rules import MovementRules
 from datetime import datetime
 
+#AGGIUNTO X REPORT serve ad avere mean_duration
+from behavior_model import BehaviorModel
+
 class Simulation:
     """
     The Simulation class represents a simulation scenario with provinces, places, and individuals.
@@ -78,7 +81,7 @@ class Simulation:
     HIDE_PRINT = True
     PROVINCES = Membrane.PROVINCES
     TOTAL_POPULATION = 10000
-    VACCINE_COVERAGE = 0.2 #MODIFICATO
+    VACCINE_COVERAGE = 0.55 #MODIFICATO
     INIT_INFECTIONS_PER_PROVINCE = int(TOTAL_POPULATION/len(PROVINCES)*0.3/100) #MODIFICATO
     YOUNG_PERCENTAGE = 0.2  # Population aged 0-20 years #MODIFICATO
     ELDERLY_PERCENTAGE = 0.3  # Population aged 60+ years #MODIFICATO
@@ -98,6 +101,17 @@ class Simulation:
     DEATH_REDUCTION_FACTOR = 6  # Factor by which death probability is reduced
     SAME_PROVINCE_PERCENTAGE = 0.8  # Probability of staying in home province
 
+    #AGGIUNTO
+    #we assume that the simulation starts on the 33rd week of the InfluNews report, which is the global minimin for flu incidence
+    #vaccination campaign starts approximately mid october, which is approximately week 8 of the simulation
+    VACCINATION_START_WEEK = 8
+    VACCINATION_START_DAY = 7 * (VACCINATION_START_WEEK - 1) + 1
+    #vaccination campaign ends approximately with new year's day, which is approximately week 21 of the simulation
+    VACCINATION_END_WEEK = 21
+    VACCINATION_END_DAY = 7*(VACCINATION_END_WEEK)
+
+    #AGGIUNTO
+    DAILY_VACCINATION_CAP_FRACTION = 0.01 #max percentage of elderly vaccinated in a single day
 
 
     def __init__(self):
@@ -242,7 +256,7 @@ class Simulation:
             destination = get_destination_province(province.label)
             if InfectionRules.VIRAL_LOAD:
                 individual = Individual(province_origin=province.label, province_destination=destination,
-                                        number=i, status="Healthy", age_group="young", vaccinated=True, v1=0, v1_ino=0, antiv=1000, antivesp=0,
+                                        number=i, status="Healthy", age_group="young", v1=0, v1_ino=0, antiv=1000, antivesp=0, #MODIFICATO: tolto che i giovani partono vaccinati
                                         phag=5, inf=0, symptoms = "E1")
             else:
                 individual = Individual(province_origin=province.label, province_destination=destination,
@@ -295,7 +309,7 @@ class Simulation:
                     infected_individuals.append(individual)
                     available_individuals.remove(individual)
 
-    def run_simulation(self, GPU_idx, days=7, hours_per_day=24, generation=0, algorithm=""):
+    def run_simulation(self, GPU_idx, days=365, hours_per_day=24, generation=0, algorithm=""):
         """
         Execute the complete simulation for the specified duration., 
 
@@ -334,6 +348,10 @@ class Simulation:
 
 
             self.incidence = [0] * (days + 1)
+
+            #AGGIUNTO X REPORT
+            self.initialize_vaccination_report()
+
             # Main simulation loop - days
             for day in range(1, days + 1):
                 if day % 50 == 0:
@@ -354,9 +372,9 @@ class Simulation:
                         else:
                             p.trigger_infection_progress()  # Simple state progression
 
-                        #ADDED: every 60 days halves vaccine efficiency
-                        if day % 60 == 0:                    
-                            p.decay_all_vaccine_effectiveness()  
+                        #RIMOSSO considerava i gg di simulazione, non i gg da quando un ind è vaccinato
+                        #if day % 60 == 0:                    
+                        #    p.decay_all_vaccine_effectiveness()  
 
                             
                 else:
@@ -370,6 +388,14 @@ class Simulation:
                 self.QUARANTINE_START_DAY -= 1
                 if self.QUARANTINE_START_DAY <= 0:
                     self.QUARANTINE_DURATION -= 1
+
+                #TEMPORANEAMENTE COMMENTATO:
+                #if self.VACCINATION_START_DAY <= day <= self.VACCINATION_END_DAY:
+                    #self.trigger_vaccination_progress(self.VACCINE_COVERAGE)
+                #E SOSTITUITO CON
+                if self.VACCINATION_START_DAY <= day <= self.VACCINATION_END_DAY:
+                    self.record_elderly_status(day)
+                    self.vaccination_step_with_report(day)
 
                 # Main simulation loop - hours within day
                 for hour in range(1, hours_per_day + 1):
@@ -404,7 +430,6 @@ class Simulation:
                             self.get_to_school()  # Students to schools
                             elderly_outside.extend(self.elderly_to_destination_prov())
                         if 9 <= hour < 17:
-                            self.trigger_vaccination_progress(self.VACCINE_COVERAGE)
                             self.workplace_infections(day)  # infections in workplaces
                             self.school_infections(day)  # Infections in schools
                             elderly_outside.extend(self.elderly_to_destination_prov())
@@ -687,6 +712,12 @@ class Simulation:
             y_label="Incidence (%)",
             base_filename="weekly_incidence_line_chart",
             color="blue"
+        )
+
+        #AGGIUNTO X REPORT:
+        self.write_vaccination_report(
+            csv_filename=csv_filename,
+            algorithm=algorithm
         )
 
         os.remove(csv_filename) #delete the daily csv
@@ -1203,29 +1234,28 @@ class Simulation:
                         MovementRules.get_home_from_hospital(individual)
 
     # VACCINATION RELATED METHODS
+  
     def trigger_vaccination_progress(self, vaccination_coverage):
         """
-        Trigger vaccination progress in the simulation.
-
-        Parameters:
-        - vaccination_coverage (float): Maximum vaccination coverage for the simulation.
-
+        Avanza la campagna vaccinale verso il target vaccination_coverage,
+        inteso come frazione della popolazione ANZIANA (non totale).
         """
-        total_vaccinated_fraction = sum(province.total_vaccinated() for province in self.provinces)
-
-        remaining_vaccination_coverage = vaccination_coverage - total_vaccinated_fraction
-        if remaining_vaccination_coverage <= 0:
+        total_elderly = sum(p.total_elderly_population() for p in self.provinces)
+        if total_elderly == 0:
             return
 
+        total_elderly_vaccinated = sum(p.total_elderly_vaccinated() for p in self.provinces)
+        if total_elderly_vaccinated / total_elderly >= vaccination_coverage:
+            return  # target già raggiunto globalmente
+
+        # Cap giornaliero totale
+        daily_cap_total = int(self.DAILY_VACCINATION_CAP_FRACTION * total_elderly)
+
         for province in self.provinces:
-            remaining_vaccination_coverage = vaccination_coverage - total_vaccinated_fraction
-
-            if remaining_vaccination_coverage <= 0:
-                break
-
-            fraction_to_vaccinate = min(remaining_vaccination_coverage, 1.0)
-            province.vaccinate_population(fraction_to_vaccinate) #errore qui
-            total_vaccinated_fraction += fraction_to_vaccinate
+        # Distribuisce il cap proporzionalmente alla popolazione anziana della provincia
+            province_elderly = province.total_elderly_population()
+            province_daily_cap = int(daily_cap_total * province_elderly / total_elderly)
+            province.vaccinate_population(vaccination_coverage, daily_cap=province_daily_cap)
 
     def check_for_death(self, individuals):
         for individual in sorted(individuals, key=lambda x: x.number):
@@ -1266,3 +1296,328 @@ class Simulation:
             return True
         return False
 
+    #TUTTO CIò CHE SEGUE è X IL REPORT
+    def initialize_vaccination_report(self):
+
+        elderly = [
+            individual
+            for individual in self.get_all_individuals()
+            if individual.age_group == "elderly"
+        ]
+
+        self.report_initial_elderly = len(elderly)
+
+        self.report_ever_vaccinated = {
+            individual.number
+            for individual in elderly
+            if individual.vaccinated
+        }
+
+        self.report_daily_vaccinations = {}
+
+        self.report_vaccine_durations = []
+
+        self.report_elderly_status_by_day = {}
+
+        self.report_target_reached_day = None
+
+        if self.report_initial_elderly > 0:
+            initial_coverage = (
+                len(self.report_ever_vaccinated)
+                / self.report_initial_elderly
+            )
+
+            if initial_coverage >= self.VACCINE_COVERAGE:
+                self.report_target_reached_day = 0
+
+
+    def vaccination_step_with_report(self, day):
+
+        elderly_before = {
+            individual.number
+            for individual in self.get_all_individuals()
+            if individual.age_group == "elderly"
+            and individual.vaccinated
+        }
+
+        self.trigger_vaccination_progress(self.VACCINE_COVERAGE)
+
+        elderly_after = {
+            individual.number: individual
+            for individual in self.get_all_individuals()
+            if individual.age_group == "elderly"
+            and individual.vaccinated
+        }
+
+        newly_vaccinated_ids = set(elderly_after.keys()) - elderly_before
+
+        self.report_daily_vaccinations[day] = len(newly_vaccinated_ids)
+
+        for individual_id in newly_vaccinated_ids:
+            individual = elderly_after[individual_id]
+
+            self.report_ever_vaccinated.add(individual_id)
+
+            self.report_vaccine_durations.append(
+                individual.vaccination_days_left
+            )
+
+        if day in self.report_elderly_status_by_day:
+            self.report_elderly_status_by_day[day]["cumulative_vaccinated"] = \
+                len(self.report_ever_vaccinated)
+
+        if (
+            self.report_initial_elderly > 0
+            and self.report_target_reached_day is None
+        ):
+            coverage = (
+                len(self.report_ever_vaccinated)
+                / self.report_initial_elderly
+            )
+
+            if coverage >= self.VACCINE_COVERAGE:
+                self.report_target_reached_day = day
+
+
+    def write_vaccination_report(self, csv_filename, algorithm=""):
+
+        simulation_name = os.path.splitext(
+            os.path.basename(csv_filename)
+        )[0]
+
+        algorithm_prefix = f"{algorithm}_" if algorithm else ""
+
+        report_filename = os.path.join(
+            os.path.dirname(csv_filename),
+            f"{algorithm_prefix}vaccination_report_{simulation_name}.txt"
+        )
+
+        if self.report_initial_elderly > 0:
+            final_coverage = (
+                len(self.report_ever_vaccinated)
+                / self.report_initial_elderly
+            )
+        else:
+            final_coverage = 0.0
+
+
+        daily_values = list(self.report_daily_vaccinations.values())
+
+        if daily_values:
+            mean_daily_vaccinations = sum(daily_values) / len(daily_values)
+        else:
+            mean_daily_vaccinations = 0.0
+
+        if self.report_initial_elderly > 0:
+            mean_daily_fraction = (
+                mean_daily_vaccinations
+                / self.report_initial_elderly
+            )
+        else:
+            mean_daily_fraction = 0.0
+
+        expected_daily_cap = int(
+            self.DAILY_VACCINATION_CAP_FRACTION
+            * self.report_initial_elderly
+        )
+
+
+        if self.report_vaccine_durations:
+            mean_vaccine_duration = (
+                sum(self.report_vaccine_durations)
+                / len(self.report_vaccine_durations)
+            )
+
+            min_vaccine_duration = min(self.report_vaccine_durations)
+            max_vaccine_duration = max(self.report_vaccine_durations)
+        else:
+            mean_vaccine_duration = 0.0
+            min_vaccine_duration = 0
+            max_vaccine_duration = 0
+
+        #da qua in poi scrive il file txt
+        with open(report_filename, "w", encoding="utf-8") as report:
+
+            report.write("REPORT VACCINO\n")
+            report.write("==================\n\n")
+
+            report.write(f"Simulazione: {simulation_name}\n")
+            report.write(
+                f"Popolazione iniziale di anziani: "
+                f"{self.report_initial_elderly}\n\n"
+            )
+
+            report.write("1. VACCINATION COVERAGE\n")
+            report.write(
+                f"Coverage target: "
+                f"{self.VACCINE_COVERAGE:.4f}\n"
+            )
+            report.write(
+                f"Effettiva coverage finale: "
+                f"{final_coverage:.4f}\n"
+            )
+            report.write(
+                f"Totale di anziani vaccinati almeno una volta: "
+                f"{len(self.report_ever_vaccinated)}\n\n"
+            )
+
+            report.write("2. TARGET COVERAGE DAY\n")
+
+            if self.report_target_reached_day is not None:
+                reached_day = self.report_target_reached_day
+                difference = self.VACCINATION_END_DAY - reached_day
+
+                report.write(
+                    f"Target coverage raggiunto: SI\n"
+                )
+                report.write(
+                    f"Giorno in cui è stato raggiunto: {reached_day}\n"
+                )
+                report.write(
+                    f"Giorno atteso di fine campagna vaccinale: "
+                    f"{self.VACCINATION_END_DAY}\n"
+                )
+
+                if difference > 0:
+                    report.write(
+                        f"Target raggiunto {difference} giorni prima "
+                        f"VACCINATION_END_DAY.\n"
+                    )
+                elif difference == 0:
+                    report.write(
+                        "Target raggiunto esattamente al giorno VACCINATION_END_DAY.\n"
+                    )
+                else:
+                    report.write(
+                        f"Target raggiunto {-difference} giorni dopo "
+                        f"VACCINATION_END_DAY.\n"
+                    )
+
+            else:
+                report.write("Target coverage raggiunta: NO\n")
+                report.write(
+                    f"Giorno atteso di fine campagna vaccinale: "
+                    f"{self.VACCINATION_END_DAY}\n"
+                )
+
+            report.write("\n")
+
+            report.write("3. VACCINAZIONI GIORNALIERE\n")
+            report.write(
+                f"Media vaccinazioni durante la campagna vaccinale: "
+                f"{mean_daily_vaccinations:.2f}\n"
+            )
+            report.write(
+                f"Frazione media di anziani vaccinati durante la campagna: "
+                f"{mean_daily_fraction:.4f} "
+                f"({mean_daily_fraction * 100:.2f}%)\n"
+            )
+            report.write(
+                f"Cap giornaliero: "
+                f"{self.DAILY_VACCINATION_CAP_FRACTION:.4f} "
+                f"({self.DAILY_VACCINATION_CAP_FRACTION * 100:.2f}%)\n"
+            )
+            report.write(
+                f"Cap espresso in individui: "
+                f"{expected_daily_cap}\n\n"
+            )
+
+            report.write("4. DURATA DEL VACCINO\n")
+            report.write(
+                f"Durata attesa: "
+                f"{BehaviorModel.MEAN_VACCINE_DURATION:.2f} giorni\n"
+            )
+            report.write(
+                f"Media delle durate assegnate: "
+                f"{mean_vaccine_duration:.2f} giorni\n"
+            )
+            report.write(
+                f"Durata minima assegnata: "
+                f"{min_vaccine_duration} giorni\n"
+            )
+            report.write(
+                f"Durata massima assegnata: "
+                f"{max_vaccine_duration} giorni\n"
+            )
+
+
+            report.write("\n")
+            report.write("5. STATO DEGLI ANZIANI DURANTE LA CAMPAGNA VACCINALE\n")
+            report.write(
+                "Giorno | Healthy | Incubation | Infected | Recovered | "
+                "Healthy non vaccinati | Recovered non vaccinati | "
+                "Vaccinati cumulativi\n"
+            )
+            report.write(
+                "----|---------|------------|----------|-----------|"
+                "----------------------|-----------------------\n"
+            )
+
+            for day in sorted(self.report_elderly_status_by_day):
+                values = self.report_elderly_status_by_day[day]
+
+                report.write(
+                    f"{day:3d} | "
+                    f"{values['healthy']:7d} | "
+                    f"{values['incubation']:10d} | "
+                    f"{values['infected']:8d} | "
+                    f"{values['recovered']:9d} | "
+                    f"{values['unvaccinated_healthy']:20d} | "
+                    f"{values['unvaccinated_recovered']:21d} |"
+                    f"{values['cumulative_vaccinated']:21d}\n"
+                )
+
+        print("Vaccination report saved to:", report_filename)
+
+        return report_filename
+
+
+    def record_elderly_status(self, day):
+
+        elderly = [
+            individual
+            for individual in self.get_all_individuals()
+            if individual.age_group == "elderly"
+        ]
+
+        healthy = sum(
+            1 for individual in elderly
+            if individual.status == "Healthy"
+        )
+
+        incubation = sum(
+            1 for individual in elderly
+            if individual.status == "Incubation"
+        )
+
+        infected = sum(
+            1 for individual in elderly
+            if individual.status == "Infected"
+        )
+
+        recovered = sum(
+            1 for individual in elderly
+            if individual.status == "Recovered"
+        )
+
+        unvaccinated_healthy = sum(
+            1 for individual in elderly
+            if individual.status == "Healthy"
+            and not individual.vaccinated
+        )
+
+        unvaccinated_recovered = sum(
+            1 for individual in elderly
+            if individual.status == "Recovered"
+            and not individual.vaccinated
+        )
+
+        self.report_elderly_status_by_day[day] = {
+            "healthy": healthy,
+            "incubation": incubation,
+            "infected": infected,
+            "recovered": recovered,
+            "unvaccinated_healthy": unvaccinated_healthy,
+            "unvaccinated_recovered": unvaccinated_recovered,
+            "cumulative_vaccinated": len(self.report_ever_vaccinated),
+        }
