@@ -278,25 +278,6 @@ class ProvinceMembrane(Membrane):
                    self.schools + self.workplaces + self.leisure_centers +
                    self.common_areas + self.hospitals + self.ICUs + self.houses)
 
-    #AGGIUNTO
-    def total_elderly_population(self):
-        """Conta tutti gli anziani presenti nella provincia."""
-        return sum(
-            sum(1 for ind in place.individuals_inside if ind.age_group == "elderly")
-            for place in (self.schools + self.workplaces + self.leisure_centers
-                      + self.common_areas + self.hospitals + self.ICUs + self.houses)
-        )
-
-    #AGGIUNTO
-    def total_elderly_vaccinated(self):
-        """Conta gli anziani vaccinati presenti nella provincia."""
-        return sum(
-            sum(1 for ind in place.individuals_inside
-                if ind.age_group == "elderly" and ind.vaccinated)
-            for place in (self.schools + self.workplaces + self.leisure_centers
-                      + self.common_areas + self.hospitals + self.ICUs + self.houses)
-    )
-
     def total_to_vaccinate(self):
         """
         Count individuals eligible for vaccination across all places.
@@ -319,64 +300,47 @@ class ProvinceMembrane(Membrane):
         return self._cached_population  #uses cache value
 
 
-    def vaccinate_population(self, coverage_percent, daily_cap=None):
+
+    def vaccinate_population(self, coverage_percent):
         """
-        Vaccina gli anziani sani fino a raggiungere coverage_percent
-        della popolazione anziana totale della provincia.
+        Simulate vaccination campaign for a portion of the eligible population.
+
+        Args:
+            coverage_percent (float): Target percentage of eligible population to vaccinate
+
+        Note:
+            - Vaccination depends on individual willingness (affected by epidemic severity)
+            - Vaccine effectiveness varies and has limited duration
+            - Only healthy, unvaccinated individuals are eligible
         """
-        # Raccoglie tutti gli anziani della provincia
-        all_elderly = [
-            ind for place in (self.schools + self.workplaces + self.leisure_centers
-                          + self.common_areas + self.hospitals + self.ICUs + self.houses) #AGGIUNTO: mancavano gli anziani in ospedale
-            for ind in place.individuals_inside
-            if ind.age_group == "elderly"
+        # Get all eligible individuals in the province
+        all_individuals = [
+            individual for place in (self.schools + self.workplaces + self.leisure_centers +
+                                     self.common_areas + self.ICUs + self.houses)
+            for individual in place.individuals_inside
+            if individual.status == "Healthy" and individual.vaccinated is False
         ]
 
-        elderly_total = len(all_elderly)
-        if elderly_total == 0:
-            return
+        # Randomize vaccination order
+        random.shuffle(all_individuals)
 
-        # Raccoglie tutti gli anziani vaccinati della provincia
-        elderly_vaccinated = sum(1 for ind in all_elderly if ind.vaccinated)
+        # Calculate target number based on coverage percentage
+        num_to_vaccinate = round(coverage_percent * len(all_individuals))
+        num_to_vaccinate = int(num_to_vaccinate)  # Ensure it's an integer
 
-        # conta gli anziani ancora da vaccinare
-        target_count = round(coverage_percent * elderly_total)
-        to_vaccinate = target_count - elderly_vaccinated
-        if to_vaccinate <= 0:
-            return
-
-        # Applica il cap giornaliero: non si supera il limite anche se il target
-        # complessivo permetterebbe di vaccinare di più
-        if daily_cap is not None:
-            to_vaccinate = min(to_vaccinate, daily_cap)
-
-        # conta gli anziani sani non ancora vaccinati
-        eligible = [ind for ind in all_elderly
-                if ind.status in ("Healthy", "Recovered") and not ind.vaccinated and not ind.hospitalized and not ind.ICU] #AGGIUNTO: considera anche i guariti e esclude gli ospedalizzati e quelli in ICu per sicurezza
-        random.shuffle(eligible)
-
-        #MODIFICATO: prima il cap influenzava gli eligible, non gli effettivamente vaccinati
-
-        vaccinated_today = 0
-
-        for individual in eligible:
-
-            if vaccinated_today >= to_vaccinate:
-                break
-
+        # Process each eligible individual up to the target number
+        for individual in all_individuals[:num_to_vaccinate]:
+            # Model willingness based on epidemic severity
             vaccination_probability = BehaviorModel.get_vaccination_probability(
                 M=self.total_infected(),
                 N=self.total_population()
             )
 
+            # Apply willingness check
             if vaccination_probability >= random.uniform(0, 1):
                 individual.vaccinated = True
-                individual.vaccine_effectiveness, individual.vaccination_days_left = \
-                    BehaviorModel.assign_vaccine_effectiveness_with_duration()
-
-                individual.days_since_vaccination = 0
-                vaccinated_today += 1
-
+                individual.vaccine_effectiveness, individual.vaccination_days_left \
+                    = BehaviorModel.assign_vaccine_effectiveness_with_duration()
 
     def trigger_infection_progress(self):
         """
@@ -411,15 +375,14 @@ class ProvinceMembrane(Membrane):
                       self.common_areas + self.hospitals + self.ICUs + self.houses):
             place.reduce_vaccine_day()
 
-    """
-    RIMOSSO
     def decay_all_vaccine_effectiveness(self):
+        """
         Apply vaccine effectiveness halving across all places in the province.
         Delegates to decay_vaccine_effectiveness() on each PlaceMembrane.
+        """
         for place in (self.schools + self.workplaces + self.leisure_centers +
                       self.common_areas + self.hospitals + self.ICUs + self.houses):
             place.decay_vaccine_effectiveness()
-    """
 
 
     def update_all_status(self):
@@ -600,28 +563,20 @@ class PlaceMembrane(Membrane):
         Note:
             When vaccine days reach zero, vaccination status is removed
         """
-
-        #Corretto codice e aggiunto dimezzamento efficacia
         for individual in self.individuals_inside:
-
-            if individual.vaccinated and individual.vaccination_days_left > 0:
+            if individual.vaccination_days_left > 0:
                 individual.vaccination_days_left -= 1
-                individual.days_since_vaccination += 1
-
-                #RIMOSSO Dimezza l'efficacia ogni 60 giorni dalla vaccinazione
-                #if individual.days_since_vaccination % 60 == 0:
-                    #individual.vaccine_effectiveness /= 2
-
-            if individual.vaccinated and individual.vaccination_days_left <= 0:
+            if individual.vaccination_days_left == 0:
                 individual.vaccinated = False
-                individual.vaccine_effectiveness = 0.0
-                individual.days_since_vaccination = 0
 
-    #RIMOSSO
-    #def decay_vaccine_effectiveness(self):
-        #for individual in self.individuals_inside:
-            #if individual.vaccinated and individual.vaccine_effectiveness > 0:
-                #individual.vaccine_effectiveness /= 2
+    def decay_vaccine_effectiveness(self):
+        """
+        Halve vaccine effectiveness for all vaccinated individuals in this place.
+        Intended to be called every 60 simulation days.
+        """
+        for individual in self.individuals_inside:
+            if individual.vaccinated and individual.vaccine_effectiveness > 0:
+                individual.vaccine_effectiveness /= 2
                 
 
     def update_status(self):
@@ -1155,8 +1110,6 @@ class Individual:
         self.hospitalized = hospitalized
         self.ICU = ICU
 
-        self.days_since_vaccination = 0 #AGGIUNTO: serve per riddurre efficacia del vaccino
-
         # Validate status is within allowed values
         if status not in ['Infected', 'Incubation', 'Healthy', 'Recovered']:
             raise ValueError("Invalid status. Status must be 'Infected', 'Incubation', 'Recovered' or 'Healthy'.")
@@ -1165,11 +1118,8 @@ class Individual:
         self.vaccinated = vaccinated
         self.vaccination_information = vaccination_information
 
-        self.vaccine_effectiveness = 0.0
-
-        #MODIFICATO, prima assegnava una protezione vaccinale a tutti, non solo a chi era stato vaccinato
-        if self.vaccinated:
-            self.vaccine_effectiveness, self.vaccination_days_left = BehaviorModel.assign_vaccine_effectiveness_with_duration()
+        #if self.vaccinated:
+        self.vaccine_effectiveness, self.vaccination_days_left = BehaviorModel.assign_vaccine_effectiveness_with_duration()
 
     def assign_to_house(self, house):
         """
