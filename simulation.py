@@ -696,15 +696,15 @@ class Simulation:
         
 
         # Line Chart 1: Day vs Prevalence
-        create_line_chart(
-            x=data["Day"],
-            y=data["Prevalence (%)"],
-            title="Prevalence Over Days (%)",
-            x_label="Days",
-            y_label="Prevalence (%)",
-            base_filename="prevalence_line_chart",
-            color="red"
-        )
+        #create_line_chart(
+        #    x=data["Day"],
+        #    y=data["Prevalence (%)"],
+        #    title="Prevalence Over Days (%)",
+        #    x_label="Days",
+        #    y_label="Prevalence (%)",
+        #    base_filename="prevalence_line_chart",
+        #    color="red"
+        #)
 
         # Line Chart 2: Day vs Incidence
         create_line_chart(
