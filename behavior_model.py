@@ -17,11 +17,23 @@ class BehaviorModel:
     VACCINE_EFFECTIVENESS_LOWER_BOUND = 15 #MODIFICATO
     VACCINE_EFFECTIVENESS_UPPER_BOUND = 65 #MODIFICATO
     DURATION_CORRELATION = 0.8
+
+    MEAN_VACCINE_DURATION = 210 #SPOSTATO QUI
+    VACCINE_DURATION_STD = 30.0 #durata del vaccino è fra 6 e 8 mesi, in media 7
+
     F_STAR = 0.01
+
+    #AGGIUNTO
+    VACCINE_PROTECTION_DELAY = 14 #quanto tempo dopo la vaccinazione si attiva la protezione
+    VACCINE_WANING_HALF_LIFE = 90 #la half life del vaccino (3 mesi)
 
     @classmethod
     def update_duration_correlation(cls, new_value: float):
         """Update correlation between effectiveness and duration."""
+        #AGGIUNTO: gestisce valori illegali di DURATION_CORRELATION
+        if not -1 <= new_value <= 1:
+            raise ValueError("DURATION_CORRELATION must be between -1 and 1")
+        
         cls.DURATION_CORRELATION = new_value
 
     @classmethod
@@ -112,6 +124,12 @@ class BehaviorModel:
         Returns:
             tuple: (vaccine_effectiveness, duration_in_days)
         """
+
+        """
+        
+        OLD VERSION:
+
+
         vaccine_effectiveness = random.uniform(
             BehaviorModel.VACCINE_EFFECTIVENESS_LOWER_BOUND,
             BehaviorModel.VACCINE_EFFECTIVENESS_UPPER_BOUND
@@ -130,3 +148,52 @@ class BehaviorModel:
         duration = np.random.multivariate_normal([mean_duration, mean_duration], cov_matrix)[0]
 
         return vaccine_effectiveness, int(duration)
+
+        """
+
+        lower = BehaviorModel.VACCINE_EFFECTIVENESS_LOWER_BOUND
+        upper = BehaviorModel.VACCINE_EFFECTIVENESS_UPPER_BOUND
+
+        effectiveness_percent = random.uniform(lower, upper)
+
+        vaccine_effectiveness = effectiveness_percent / 100
+
+        mean_duration = BehaviorModel.MEAN_VACCINE_DURATION
+        duration_std = BehaviorModel.VACCINE_DURATION_STD
+
+        #fino a qua è tutto uguale, solo suddiviso in variabili più chiare
+
+        effectiveness_mean = (lower + upper) / 2
+        effectiveness_std = (upper - lower) / np.sqrt(12)
+
+        z_effectiveness = (effectiveness_percent - effectiveness_mean) / effectiveness_std
+
+        z_random = np.random.normal(0, 1)
+
+        correlation = BehaviorModel.DURATION_CORRELATION
+
+        z_duration = (
+            correlation * z_effectiveness #parte legata a durata
+            + np.sqrt(1 - correlation**2) * z_random #parte casuale
+        )
+
+        duration = mean_duration + duration_std * z_duration
+
+        # ora durata ed efficacia sono correlate. Prima DURATION_CORRELATION non influenzava nulla
+
+        return vaccine_effectiveness, int(round(duration))
+
+    @staticmethod
+    def get_current_vaccine_effectiveness(initial_effectiveness, days_since_vaccination):
+
+        if initial_effectiveness <= 0:
+            return 0.0
+
+        if days_since_vaccination < BehaviorModel.VACCINE_PROTECTION_DELAY:
+            return 0.0
+
+        days_of_protection = (days_since_vaccination - BehaviorModel.VACCINE_PROTECTION_DELAY)
+
+        waning_factor = 0.5 ** (days_of_protection / BehaviorModel.VACCINE_WANING_HALF_LIFE)
+
+        return initial_effectiveness * waning_factor
