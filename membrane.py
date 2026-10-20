@@ -245,8 +245,13 @@ class ProvinceMembrane(Membrane):
             self.houses.append(mem_to_add)
 
 
-    # Updates cache parameters
     def update_cache(self):
+        """
+        Refresh cached province-level population and infection counts.
+
+        The cache is computed from all places currently belonging to the province
+        and is used by methods that require province-level aggregate values.
+        """
         all_places = (self.schools + self.workplaces + self.leisure_centers +
                   self.common_areas + self.hospitals + self.ICUs + self.houses)
         self._cached_infected = sum(place.get_total_infected() for place in all_places)
@@ -278,18 +283,16 @@ class ProvinceMembrane(Membrane):
                    self.schools + self.workplaces + self.leisure_centers +
                    self.common_areas + self.hospitals + self.ICUs + self.houses)
 
-    #AGGIUNTO
     def total_elderly_population(self):
-        """Conta tutti gli anziani presenti nella provincia."""
+        """Count all elderly individuals currently present in the province."""
         return sum(
             sum(1 for ind in place.individuals_inside if ind.age_group == "elderly")
             for place in (self.schools + self.workplaces + self.leisure_centers
                       + self.common_areas + self.hospitals + self.ICUs + self.houses)
         )
 
-    #AGGIUNTO
     def total_elderly_vaccinated(self):
-        """Conta gli anziani vaccinati presenti nella provincia."""
+        """Count vaccinated elderly individuals currently present in the province."""
         return sum(
             sum(1 for ind in place.individuals_inside
                 if ind.age_group == "elderly" and ind.vaccinated)
@@ -321,13 +324,21 @@ class ProvinceMembrane(Membrane):
 
     def vaccinate_population(self, coverage_percent, daily_cap=None):
         """
-        Vaccina gli anziani sani fino a raggiungere coverage_percent
-        della popolazione anziana totale della provincia.
+        Vaccinate eligible elderly individuals toward a province-level coverage target.
+
+        Only healthy or recovered elderly individuals who are not currently vaccinated,
+        hospitalized, or in ICU are eligible. Vaccinations are limited by the optional
+        daily cap and are assigned according to vaccination willingness.
+
+        Args:
+            coverage_percent (float): Target vaccinated fraction of the elderly population.
+            daily_cap (int, optional): Maximum number of vaccinations that may be
+                administered during this step.
         """
-        # Raccoglie tutti gli anziani della provincia
+
         all_elderly = [
             ind for place in (self.schools + self.workplaces + self.leisure_centers
-                          + self.common_areas + self.hospitals + self.ICUs + self.houses) #AGGIUNTO: mancavano gli anziani in ospedale
+                          + self.common_areas + self.hospitals + self.ICUs + self.houses) 
             for ind in place.individuals_inside
             if ind.age_group == "elderly"
         ]
@@ -336,26 +347,28 @@ class ProvinceMembrane(Membrane):
         if elderly_total == 0:
             return
 
-        # Raccoglie tutti gli anziani vaccinati della provincia
+
+        # counts vaccinated elderly in province
         elderly_vaccinated = sum(1 for ind in all_elderly if ind.vaccinated)
 
-        # conta gli anziani ancora da vaccinare
+        # counts elderly still not vaccinated
         target_count = round(coverage_percent * elderly_total)
         to_vaccinate = target_count - elderly_vaccinated
         if to_vaccinate <= 0:
             return
 
-        # Applica il cap giornaliero: non si supera il limite anche se il target
-        # complessivo permetterebbe di vaccinare di più
+        # applies daily cap and does not vaccinate more people than the cap permits
         if daily_cap is not None:
             to_vaccinate = min(to_vaccinate, daily_cap)
 
-        # conta gli anziani sani non ancora vaccinati
-        eligible = [ind for ind in all_elderly
-                if ind.status in ("Healthy", "Recovered") and not ind.vaccinated and not ind.hospitalized and not ind.ICU] #AGGIUNTO: considera anche i guariti e esclude gli ospedalizzati e quelli in ICu per sicurezza
-        random.shuffle(eligible)
 
-        #MODIFICATO: prima il cap influenzava gli eligible, non gli effettivamente vaccinati
+        to_vaccinate = daily_cap if daily_cap is not None else elderly_total
+
+
+        # counts healthy or recovered elderly still not vaccinated
+        eligible = [ind for ind in all_elderly
+                if ind.status in ("Healthy", "Recovered") and not ind.vaccinated and not ind.hospitalized and not ind.ICU]
+        random.shuffle(eligible)
 
         vaccinated_today = 0
 
@@ -410,16 +423,6 @@ class ProvinceMembrane(Membrane):
         for place in (self.schools + self.workplaces + self.leisure_centers +
                       self.common_areas + self.hospitals + self.ICUs + self.houses):
             place.reduce_vaccine_day()
-
-    """
-    RIMOSSO
-    def decay_all_vaccine_effectiveness(self):
-        Apply vaccine effectiveness halving across all places in the province.
-        Delegates to decay_vaccine_effectiveness() on each PlaceMembrane.
-        for place in (self.schools + self.workplaces + self.leisure_centers +
-                      self.common_areas + self.hospitals + self.ICUs + self.houses):
-            place.decay_vaccine_effectiveness()
-    """
 
 
     def update_all_status(self):
@@ -601,28 +604,34 @@ class PlaceMembrane(Membrane):
             When vaccine days reach zero, vaccination status is removed
         """
 
-        #Corretto codice e aggiunto dimezzamento efficacia
         for individual in self.individuals_inside:
 
             if individual.vaccinated and individual.vaccination_days_left > 0:
                 individual.vaccination_days_left -= 1
                 individual.days_since_vaccination += 1
 
-                #RIMOSSO Dimezza l'efficacia ogni 60 giorni dalla vaccinazione
-                #if individual.days_since_vaccination % 60 == 0:
-                    #individual.vaccine_effectiveness /= 2
-
             if individual.vaccinated and individual.vaccination_days_left <= 0:
                 individual.vaccinated = False
                 individual.vaccine_effectiveness = 0.0
                 individual.days_since_vaccination = 0
-
-    #RIMOSSO
-    #def decay_vaccine_effectiveness(self):
-        #for individual in self.individuals_inside:
-            #if individual.vaccinated and individual.vaccine_effectiveness > 0:
-                #individual.vaccine_effectiveness /= 2
                 
+
+    def update_status(self):
+        for individual in self.individuals_inside:
+            if InfectionRules.VIRAL_LOAD:
+                # Update status based on v1 value
+                if individual.status != "Recovered":
+                    if individual.status == "Deceased":
+                        self.remove_individual(individual)
+                    if individual.v1 == 0:
+                        individual.status = "Healthy"
+                    elif 1 <= individual.v1 < InfectionRules.INFECTION_V1 and individual.status in ("Healthy", "Incubation"):
+                        individual.status = "Incubation"
+                    elif individual.v1 >= InfectionRules.INFECTION_V1:
+                        individual.status = "Infected"
+            elif individual.status == "Deceased":
+                self.remove_individual(individual)
+        self.update_infected_count()
 
     def update_status(self):
         """
@@ -632,20 +641,24 @@ class PlaceMembrane(Membrane):
             With viral load model: Updates status based on v1 value thresholds
             Always removes deceased individuals from the place
         """
-        for individual in self.individuals_inside:
-            if InfectionRules.VIRAL_LOAD:
-                # Update status based on v1 value
-                if individual.status != "Recovered":
-                    if individual.status == "Deceased":
-                        self.remove_individual(individual)
-                    if individual.v1 == 0:
-                        individual.status = "Healthy"
-                    elif 1 <= individual.v1 < InfectionRules.INFECTION_V1 and individual.status == ("Healthy" or "Incubation"):
-                        individual.status = "Incubation"
-                    elif individual.v1 >= InfectionRules.INFECTION_V1:
-                        individual.status = "Infected"
-            elif individual.status == "Deceased":
+
+        for individual in self.individuals_inside[:]:
+            # Remove deceased individuals before updating health status
+            if individual.status == "Deceased":
                 self.remove_individual(individual)
+                continue
+            if InfectionRules.VIRAL_LOAD:
+                # Recovered individuals retain their status
+                if individual.status == "Recovered":
+                    continue
+                # Update health status according to viral load
+                if individual.v1 == 0:
+                    individual.status = "Healthy"
+                elif (1 <= individual.v1 < InfectionRules.INFECTION_V1 and individual.status in ("Healthy", "Incubation")):
+                    individual.status = "Incubation"
+                elif individual.v1 >= InfectionRules.INFECTION_V1:
+                    individual.status = "Infected"
+
         self.update_infected_count()
 
     def update_infected_count(self):
@@ -678,7 +691,7 @@ class PlaceMembrane(Membrane):
                 if random.uniform(0, 1) < InfectionRules.HOSPITALIZATION_PROB:
                     # Transfer to hospital
                     self.remove_individual(individual)
-                    individual.hospitalization_days_left = 7  # Set hospitalization duration
+                    individual.hospitalization_days_left = InfectionRules.HOSPITALIZATION_PERIOD   # Set hospitalization duration
                     hospital_membrane.add_individual(individual)
                     individual.hospitalized = True
 
@@ -1155,7 +1168,7 @@ class Individual:
         self.hospitalized = hospitalized
         self.ICU = ICU
 
-        self.days_since_vaccination = 0 #AGGIUNTO: serve per riddurre efficacia del vaccino
+        self.days_since_vaccination = 0
 
         # Validate status is within allowed values
         if status not in ['Infected', 'Incubation', 'Healthy', 'Recovered']:
@@ -1167,7 +1180,6 @@ class Individual:
 
         self.vaccine_effectiveness = 0.0
 
-        #MODIFICATO, prima assegnava una protezione vaccinale a tutti, non solo a chi era stato vaccinato
         if self.vaccinated:
             self.vaccine_effectiveness, self.vaccination_days_left = BehaviorModel.assign_vaccine_effectiveness_with_duration()
 
@@ -1211,10 +1223,15 @@ class Individual:
             if self.infection_days_left == 0:
                 self.status = "Recovered"
 
-        if self.vaccination_days_left > 0:
-            self.vaccination_days_left -= 1
-            if self.vaccination_days_left == 0:
+        if self.vaccinated:
+            self.days_since_vaccination += 1
+
+            if self.vaccination_days_left > 0:
+                self.vaccination_days_left -= 1
+
+            if self.vaccination_days_left <= 0:
                 self.vaccinated = False
+                self.vaccine_effectiveness = 0.0
 
         '''
         if self.status == 'Recovered' and self.immunity_days_left > 0:
@@ -1227,11 +1244,16 @@ class Individual:
     def start_infection(self):
         """
         Start the infection period for the individual.
+
+        In the simplified model, infection lasts seven days.
+        In the viral load model, progression depends on viral dynamics.
         """
-        #self.infection_days_left = 7
         self.status = "Infected"
+
         if InfectionRules.VIRAL_LOAD:
-            self.v1 = InfectionRules.INFECTION_V1 #Add viral load of infected individual
+            self.v1 = InfectionRules.INFECTION_V1
+        else:
+            self.infection_days_left = 7
 
     def recover(self):
         self.status = "Recovered"
