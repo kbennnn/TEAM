@@ -22,7 +22,7 @@ from membrane import (
 from movement_rules import MovementRules
 from datetime import datetime
 
-#AGGIUNTO X REPORT serve ad avere mean_duration
+# ADDED FOR REPORTING: required to access the mean vaccine duration
 from behavior_model import BehaviorModel
 
 class Simulation:
@@ -32,7 +32,7 @@ class Simulation:
     Attributes:
     - PROVINCES (list): List of province labels.
     - TOTAL_POPULATION (int): Total population for the simulation.
-    - VACCINE_COVERAGE (float): Base vaccine coverage for the simulation.
+    - VACCINE_COVERAGE (float): Reference fraction of the elderly population to vaccinate during the vaccination campaign.
     - INIT_INFECTIONS_PER_PROVINCE (int): Number of initial infections.
     - YOUNG_PERCENTAGE (float): Percentage of young population.
     - ELDERLY_PERCENTAGE (float): Percentage of elderly population.
@@ -81,10 +81,10 @@ class Simulation:
     HIDE_PRINT = True
     PROVINCES = Membrane.PROVINCES
     TOTAL_POPULATION = 10000
-    VACCINE_COVERAGE = 0.55 #MODIFICATO
-    INIT_INFECTIONS_PER_PROVINCE = int(TOTAL_POPULATION/len(PROVINCES)*0.3/100) #MODIFICATO
-    YOUNG_PERCENTAGE = 0.2  # Population aged 0-20 years #MODIFICATO
-    ELDERLY_PERCENTAGE = 0.3  # Population aged 60+ years #MODIFICATO
+    VACCINE_COVERAGE = 0.55 # Reference elderly vaccination coverage based on recent influenza seasons
+    INIT_INFECTIONS_PER_PROVINCE = int(TOTAL_POPULATION/len(PROVINCES)*0.3/100) 
+    YOUNG_PERCENTAGE = 0.2  # Population aged 0-20 years 
+    ELDERLY_PERCENTAGE = 0.3  # Population aged 60+ years 
     
     ADULT_PERCENTAGE = 1 - YOUNG_PERCENTAGE - ELDERLY_PERCENTAGE  # Population aged 21-59 years
     GET_HOME_18 = 0.2  # Probability of students returning home at 18:00
@@ -101,16 +101,14 @@ class Simulation:
     DEATH_REDUCTION_FACTOR = 6  # Factor by which death probability is reduced
     SAME_PROVINCE_PERCENTAGE = 0.8  # Probability of staying in home province
 
-    #AGGIUNTO
-    #we assume that the simulation starts on the 33rd week of the InfluNews report, which is the global minimin for flu incidence
-    #vaccination campaign starts approximately mid october, which is approximately week 8 of the simulation
+    #we assume that the simulation starts on the 33rd week of the InfluNews report, which is the global minimum for flu incidence
+    #vaccination campaign starts approximately beginning-mid october, which is approximately week 8 of the simulation
     VACCINATION_START_WEEK = 8
     VACCINATION_START_DAY = 7 * (VACCINATION_START_WEEK - 1) + 1
     #vaccination campaign ends approximately with new year's day, which is approximately week 21 of the simulation
     VACCINATION_END_WEEK = 21
     VACCINATION_END_DAY = 7*(VACCINATION_END_WEEK)
 
-    #AGGIUNTO
     DAILY_VACCINATION_CAP_FRACTION = 0.01 #max percentage of elderly vaccinated in a single day
 
 
@@ -256,7 +254,7 @@ class Simulation:
             destination = get_destination_province(province.label)
             if InfectionRules.VIRAL_LOAD:
                 individual = Individual(province_origin=province.label, province_destination=destination,
-                                        number=i, status="Healthy", age_group="young", v1=0, v1_ino=0, antiv=1000, antivesp=0, #MODIFICATO: tolto che i giovani partono vaccinati
+                                        number=i, status="Healthy", age_group="young", v1=0, v1_ino=0, antiv=1000, antivesp=0, 
                                         phag=5, inf=0, symptoms = "E1")
             else:
                 individual = Individual(province_origin=province.label, province_destination=destination,
@@ -309,7 +307,7 @@ class Simulation:
                     infected_individuals.append(individual)
                     available_individuals.remove(individual)
 
-    def run_simulation(self, GPU_idx, days=365, hours_per_day=24, generation=0, algorithm=""):
+    def run_simulation(self, GPU_idx=0, days=365, hours_per_day=24, generation=0, algorithm=""):
         """
         Execute the complete simulation for the specified duration., 
 
@@ -349,7 +347,6 @@ class Simulation:
 
             self.incidence = [0] * (days + 1)
 
-            #AGGIUNTO X REPORT
             self.initialize_vaccination_report()
 
             # Main simulation loop - days
@@ -372,10 +369,6 @@ class Simulation:
                         else:
                             p.trigger_infection_progress()  # Simple state progression
 
-                        #RIMOSSO considerava i gg di simulazione, non i gg da quando un ind è vaccinato
-                        #if day % 60 == 0:                    
-                        #    p.decay_all_vaccine_effectiveness()  
-
                             
                 else:
                     # First day initialization and reporting
@@ -389,13 +382,13 @@ class Simulation:
                 if self.QUARANTINE_START_DAY <= 0:
                     self.QUARANTINE_DURATION -= 1
 
-                #TEMPORANEAMENTE COMMENTATO:
+                #REMOVED FOR REPORT:
                 #if self.VACCINATION_START_DAY <= day <= self.VACCINATION_END_DAY:
                     #self.trigger_vaccination_progress(self.VACCINE_COVERAGE)
-                #E SOSTITUITO CON
+                #AND REPLACED WITH:
                 if self.VACCINATION_START_DAY <= day <= self.VACCINATION_END_DAY:
-                    self.record_elderly_status(day)
                     self.vaccination_step_with_report(day)
+                    self.record_elderly_status(day)
 
                 # Main simulation loop - hours within day
                 for hour in range(1, hours_per_day + 1):
@@ -573,8 +566,8 @@ class Simulation:
                 class_S = 0  # Susceptible
                 class_E = 0  # Exposed
                 class_I = 0  # Infected
-                class_J3 = 0  # Hospitalized
-                class_J4 = 0  # ICU
+                class_J3 = 0  # Severe symptoms
+                class_J4 = 0  # Critical symptoms
                 class_R = 0  # Recovered
                 individuals = self.get_all_individuals()
                 for individual in individuals:
@@ -714,7 +707,7 @@ class Simulation:
             color="blue"
         )
 
-        #AGGIUNTO X REPORT:
+        #ADDED FOR REPORT
         self.write_vaccination_report(
             csv_filename=csv_filename,
             algorithm=algorithm
@@ -953,7 +946,7 @@ class Simulation:
         Move elders from leisure centers to the common area.
 
         Returns:
-        - list: List of workers who leave leisure centers.
+        - list: List of elders who leave leisure centers.
         """
         elderly_home = []
         for province in self.provinces:
@@ -1170,7 +1163,7 @@ class Simulation:
         for province in self.provinces:
             for leisure_center in province.leisure_centers:
                 if 1 <= day % 7 <= 5:
-                    #settimana
+                    #weekdays
                     if 9 <= hour <= 21:
                         self.incidence[day] += leisure_center.infect_elderly_lc()
                     if 21 <= hour <= 24:
@@ -1202,7 +1195,7 @@ class Simulation:
         """
         for province in self.provinces:
             for place in province.workplaces + province.schools + province.common_areas + province.leisure_centers + province.houses:
-                for individual in place.individuals_inside:
+                for individual in place.individuals_inside.copy():
                     available_hospital = next((hospital for hospital in province.hospitals if len(hospital.individuals_inside) < hospital.capacity), None)
                     if available_hospital:
                         place.check_hospitalization(individual, available_hospital)
@@ -1214,7 +1207,7 @@ class Simulation:
         """
         for province in self.provinces:
             for place in province.workplaces + province.schools + province.common_areas + province.leisure_centers + province.hospitals + province.houses:
-                for individual in place.individuals_inside:
+                for individual in place.individuals_inside.copy():
                     available_ICU = next((ICU for ICU in province.ICUs if len(ICU.individuals_inside) < ICU.capacity), None)
                     if available_ICU:
                         place.check_ICU(individual, available_ICU)
@@ -1237,8 +1230,8 @@ class Simulation:
   
     def trigger_vaccination_progress(self, vaccination_coverage):
         """
-        Avanza la campagna vaccinale verso il target vaccination_coverage,
-        inteso come frazione della popolazione ANZIANA (non totale).
+        Advance the vaccination campaign toward the vaccination_coverage target,
+        interpreted as a fraction of the elderly population rather than the total population.
         """
         total_elderly = sum(p.total_elderly_population() for p in self.provinces)
         if total_elderly == 0:
@@ -1246,16 +1239,36 @@ class Simulation:
 
         total_elderly_vaccinated = sum(p.total_elderly_vaccinated() for p in self.provinces)
         if total_elderly_vaccinated / total_elderly >= vaccination_coverage:
-            return  # target già raggiunto globalmente
+            return  #target reached
 
-        # Cap giornaliero totale
+        # Total daily vaccination cap
         daily_cap_total = int(self.DAILY_VACCINATION_CAP_FRACTION * total_elderly)
 
-        for province in self.provinces:
-        # Distribuisce il cap proporzionalmente alla popolazione anziana della provincia
-            province_elderly = province.total_elderly_population()
-            province_daily_cap = int(daily_cap_total * province_elderly / total_elderly)
-            province.vaccinate_population(vaccination_coverage, daily_cap=province_daily_cap)
+        # Calculate proportional daily vaccination quotas for each province
+        exact_caps = [
+            daily_cap_total * p.total_elderly_population() / total_elderly
+            for p in self.provinces
+        ]
+
+        # Assign the integer part of each quota
+        daily_caps = [int(cap) for cap in exact_caps]
+
+        # Distribute remaining doses to provinces with the largest remainders
+        remaining = daily_cap_total - sum(daily_caps)
+
+        order = sorted(
+            range(len(self.provinces)),
+            key=lambda i: exact_caps[i] - daily_caps[i],
+            reverse=True
+        )
+
+        for i in order[:remaining]:
+            daily_caps[i] += 1
+
+        # Vaccinate elderly individuals within each province's daily cap
+        for province, cap in zip(self.provinces, daily_caps):
+            province.vaccinate_population(vaccination_coverage, daily_cap=cap)
+
 
     def check_for_death(self, individuals):
         for individual in sorted(individuals, key=lambda x: x.number):
@@ -1296,7 +1309,7 @@ class Simulation:
             return True
         return False
 
-    #TUTTO CIò CHE SEGUE è X IL REPORT
+    # EVERYTHING BELOW IS USED FOR THE VACCINATION REPORT
     def initialize_vaccination_report(self):
 
         elderly = [
@@ -1332,6 +1345,16 @@ class Simulation:
 
 
     def vaccination_step_with_report(self, day):
+        """
+        Execute one vaccination-campaign step and update vaccination reporting data.
+
+        The method records vaccinated elderly individuals before and after the
+        vaccination step in order to identify newly vaccinated individuals and
+        store their assigned protection durations.
+
+        Args:
+            day (int): Current simulation day.
+        """
 
         elderly_before = {
             individual.number
@@ -1435,7 +1458,7 @@ class Simulation:
             min_vaccine_duration = 0
             max_vaccine_duration = 0
 
-        #da qua in poi scrive il file txt
+        #From this point onward, write the TXT report
         with open(report_filename, "w", encoding="utf-8") as report:
 
             report.write("REPORT VACCINO\n")
@@ -1449,7 +1472,7 @@ class Simulation:
 
             report.write("1. VACCINATION COVERAGE\n")
             report.write(
-                f"Coverage target: "
+                f"Vaccination coverage di riferimento: "
                 f"{self.VACCINE_COVERAGE:.4f}\n"
             )
             report.write(
@@ -1461,14 +1484,14 @@ class Simulation:
                 f"{len(self.report_ever_vaccinated)}\n\n"
             )
 
-            report.write("2. TARGET COVERAGE DAY\n")
+            report.write("2. REFERENCE COVERAGE RAGGIUNTA\n")
 
             if self.report_target_reached_day is not None:
                 reached_day = self.report_target_reached_day
                 difference = self.VACCINATION_END_DAY - reached_day
 
                 report.write(
-                    f"Target coverage raggiunto: SI\n"
+                    f"Coverage di riferimento raggiunta: SI\n"
                 )
                 report.write(
                     f"Giorno in cui è stato raggiunto: {reached_day}\n"
@@ -1542,7 +1565,7 @@ class Simulation:
 
 
             report.write("\n")
-            report.write("5. STATO DEGLI ANZIANI DURANTE LA CAMPAGNA VACCINALE\n")
+            report.write("5. STATO DEGLI ANZIANI DOPO LA VACCINAZIONE GIORNALIERA\n")
             report.write(
                 "Giorno | Healthy | Incubation | Infected | Recovered | "
                 "Healthy non vaccinati | Recovered non vaccinati | "
