@@ -24,7 +24,6 @@ class BehaviorModel:
     F_STAR = 0.01
 
     VACCINE_PROTECTION_DELAY = 14 #how much time after vaccination the protection is effective (2 weeks)
-    VACCINE_WANING_HALF_LIFE = 90 #vaccine half life (3 months)
 
     MIN_VACCINE_DURATION = 90   # Minimum duration: 3 months
     MAX_VACCINE_DURATION = 330  # Maximum duration: 11 months
@@ -180,6 +179,7 @@ class BehaviorModel:
                 initially assigned effectiveness.
         """
 
+
         if initial_effectiveness <= 0:
             return 0.0
 
@@ -188,6 +188,8 @@ class BehaviorModel:
 
         days_of_protection = (days_since_vaccination - BehaviorModel.VACCINE_PROTECTION_DELAY)
 
-        waning_factor = 0.5 ** (days_of_protection / BehaviorModel.VACCINE_WANING_HALF_LIFE)
+        half_life = (BehaviorModel.MEAN_VACCINE_DURATION - 30) / 2 #vaccine half-life depends on duration of the vaccine. With a duration of 210 days, half-life will be 90 days
+
+        waning_factor = 0.5 ** (days_of_protection / half_life)
 
         return initial_effectiveness * waning_factor
