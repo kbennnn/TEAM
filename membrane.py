@@ -362,9 +362,6 @@ class ProvinceMembrane(Membrane):
             to_vaccinate = min(to_vaccinate, daily_cap)
 
 
-        to_vaccinate = daily_cap if daily_cap is not None else elderly_total
-
-
         # counts healthy or recovered elderly still not vaccinated
         eligible = [ind for ind in all_elderly
                 if ind.status in ("Healthy", "Recovered") and not ind.vaccinated and not ind.hospitalized and not ind.ICU]
