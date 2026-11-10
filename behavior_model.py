@@ -100,7 +100,10 @@ class BehaviorModel:
         Returns:
             float: Probability value between 0-2
         """
-        return random.uniform(0, 1) * BehaviorModel.vaccination_willingness(M, N)
+        if N > 0:
+            return random.uniform(0, 1) * BehaviorModel.vaccination_willingness(M, N)
+        else:
+            return 0
 
     @staticmethod
     def assign_vaccine_effectiveness():

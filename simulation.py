@@ -372,7 +372,7 @@ class Simulation:
                         else:
                             p.trigger_infection_progress()  # Simple state progression
 
-                        #RIMOSSO considerava i gg di simulazione, non i gg da quando un ind è vaccinato
+                        #RIMOSSO considerava i gg di simulazione, non i gg da quando un ind � vaccinato
                         #if day % 60 == 0:                    
                         #    p.decay_all_vaccine_effectiveness()  
 
@@ -767,7 +767,11 @@ class Simulation:
         )
 
         #AGGIUNTO X REPORT:
-        self.write_vaccination_report(
+        #self.write_vaccination_report(
+        #    csv_filename=csv_filename,
+        #    algorithm=algorithm
+        #)
+        self.write_vaccination_csv(
             csv_filename=csv_filename,
             algorithm=algorithm
         )
@@ -1298,7 +1302,7 @@ class Simulation:
 
         total_elderly_vaccinated = sum(p.total_elderly_vaccinated() for p in self.provinces)
         if total_elderly_vaccinated / total_elderly >= vaccination_coverage:
-            return  # target già raggiunto globalmente
+            return  # target gi� raggiunto globalmente
 
         # Cap giornaliero totale
         daily_cap_total = int(self.DAILY_VACCINATION_CAP_FRACTION * total_elderly)
@@ -1348,7 +1352,7 @@ class Simulation:
             return True
         return False
 
-    #TUTTO CIò CHE SEGUE è X IL REPORT
+    #TUTTO CI� CHE SEGUE � X IL REPORT
     def initialize_vaccination_report(self):
 
         elderly = [
@@ -1523,7 +1527,7 @@ class Simulation:
                     f"Target coverage raggiunto: SI\n"
                 )
                 report.write(
-                    f"Giorno in cui è stato raggiunto: {reached_day}\n"
+                    f"Giorno in cui e' stato raggiunto: {reached_day}\n"
                 )
                 report.write(
                     f"Giorno atteso di fine campagna vaccinale: "
@@ -1623,6 +1627,57 @@ class Simulation:
 
         return report_filename
 
+    def write_vaccination_csv(self, csv_filename, algorithm=""):
+
+  
+        simulation_name, _ = os.path.splitext(
+            os.path.basename(csv_filename)
+        )
+
+        algorithm_prefix = f"{algorithm}_" if algorithm else ""
+
+        clean_sim_name = simulation_name.replace("simulation_", "")
+
+        report_filename = os.path.join(
+            os.path.dirname(csv_filename),
+            f"{algorithm_prefix}vaccination_{clean_sim_name}.csv"
+        )
+
+
+
+
+        with open(report_filename, "w", newline="", encoding="utf-8") as csvfile:
+            writer = csv.writer(csvfile)
+
+            # CSV columns
+            writer.writerow([
+                "Giorno",
+                "Healthy",
+                "Incubation",
+                "Infected",
+                "Recovered",
+                "Healthy_non_vaccinati",
+                "Recovered_non_vaccinati",
+                "Vaccinati_cumulativi"
+            ])
+
+            # Daily data writing
+            for day in sorted(self.report_elderly_status_by_day):
+                values = self.report_elderly_status_by_day[day]
+                writer.writerow([
+                    day,
+                    values["healthy"],
+                    values["incubation"],
+                    values["infected"],
+                    values["recovered"],
+                    values["unvaccinated_healthy"],
+                    values["unvaccinated_recovered"],
+                    values["cumulative_vaccinated"]
+                ])
+
+        print("Vaccination CSV report saved to:", report_filename)
+
+        return report_filename
 
     def record_elderly_status(self, day):
 

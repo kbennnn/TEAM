@@ -147,18 +147,19 @@ class Parameters:
 
     PARAMETER_BOUNDS = {
         # Infection
-        "hospitalization_prob": (0.0435, 0.08), #was  (0.01, 0.10), 
-        "v1_growth_prob": (0.033, 0.053), #was (0.01, 0.06),
-        "antiv_kill_prob": (0.0007, 0.0059), #was (0.0001, 0.01),
-        "prudence_parameter": (0.58, 0.76), #was (0.6, 1.0),
-        "antivesp_young_ratio": (3, 7), #was (2, 10),
-        "antivesp_adult_ratio": (1,2), #was (1, 4),
+        "hospitalization_prob": (0.01, 0.10), #was (0.0435, 0.08)
+        "v1_growth_prob": (0.01, 0.06), #was (0.033, 0.053)
+        "antiv_kill_prob": (0.0001, 0.01), #was (0.0007, 0.0059)
+        "prudence_parameter": (0.6, 1.0), #was (0.58, 0.76)
+        "antivesp_young_ratio": (2, 10), #was (3, 7)
+        "antivesp_adult_ratio": (1, 4), #was (1,2)
         # Viral load thresholds 
-        "incubation_v1": (15, 28), #was (1, 30),
-        "infection_v1": (140, 240), #was (50, 300),
-        "recovered_antivesp": (26, 42), #was (10, 70),
-        "symptoms_progression": (630, 743), #was (500, 800),
+        "incubation_v1": (1, 30), #was (15, 28)
+        "infection_v1": (50, 300), #was (140, 240)
+        "recovered_antivesp": (10, 70), #was (26, 42)
+        "symptoms_progression": (500, 800), #was (630, 743)
     }
+
     '''
     #New ranges after the first tuning on bounds
     PARAMETER_BOUNDS = {
