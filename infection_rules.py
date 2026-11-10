@@ -5,7 +5,7 @@ from behavior_model import BehaviorModel
 # XML rules file uses lower infection and mortality rates, resulting in less extreme simulations
 class InfectionRules:
     # Disease progression parameters
-    INCUBATION_PERIOD = 2 #MODIFICATO was 5 for covid 
+    INCUBATION_PERIOD = 2
     HOSPITALIZATION_PERIOD = 7
 
     # Simulation control flags
@@ -46,10 +46,6 @@ class InfectionRules:
 
     # Behavioral parameters
     PRUDENCE_PARAMETER = 0.9    # Controls social distancing (0=no caution, 1=complete isolation with E2)
-
-    #RIMOSSO
-    #VACCINATED_VIRUS_FRACTION = 0.5 tiene conto del fatto che il vaccino esiste solo per 3 dei virus simil-influenzali (influenza, Virus respiratorio sinciziale e SARS-COV-2)
-                                     #e che quei 3 virus sono quelli più presenti, circa al 50%
 
     # Configuration update methods
     @classmethod
@@ -101,12 +97,29 @@ class InfectionRules:
         cls.ANTIV_KILL_PROB = new_value
 
     @classmethod
-    def update_antivesp_young_ratio(cls, new_value: bool):
+    def update_antivesp_young_ratio(cls, new_value: float):
+        """
+        Update the young-to-elderly antibody production ratio
+        and recalculate the derived probabilities.
+        """
         cls.ANTIVESP_YOUNG_RATIO = new_value
 
+        cls.ANTIVESP_YOUNG_E2_PROB = cls.ANTIVESP_ELDERLY_E2_PROB * new_value
+        cls.ANTIVESP_YOUNG_E3_PROB = cls.ANTIVESP_ELDERLY_E3_PROB * new_value
+        cls.ANTIVESP_YOUNG_E4_PROB = cls.ANTIVESP_ELDERLY_E4_PROB * new_value
+
+
     @classmethod
-    def update_antivesp_adult_ratio(cls, new_value: bool):
+    def update_antivesp_adult_ratio(cls, new_value: float):
+        """
+        Update the adult-to-elderly antibody production ratio
+        and recalculate the derived probabilities.
+        """
         cls.ANTIVESP_ADULT_RATIO = new_value
+
+        cls.ANTIVESP_ADULT_E2_PROB = cls.ANTIVESP_ELDERLY_E2_PROB * new_value
+        cls.ANTIVESP_ADULT_E3_PROB = cls.ANTIVESP_ELDERLY_E3_PROB * new_value
+        cls.ANTIVESP_ADULT_E4_PROB = cls.ANTIVESP_ELDERLY_E4_PROB * new_value
 
 
     # Viral load thresholds
@@ -145,6 +158,10 @@ class InfectionRules:
         """
         new_infections = 0
 
+        # Infection transmission requires at least one infected individual
+        if number_of_infected <= 0 or total_in_membrane <= 0:
+            return 0
+
         # Get province-level infection metrics
         m = province_membrane.total_infected()
         n = province_membrane.total_population()
@@ -170,7 +187,7 @@ class InfectionRules:
             if (InfectionRules.VACCINATION_TRIGGER and individual.vaccinated and individual.vaccination_days_left > 0 and individual.age_group == "elderly"): 
                 effective_protection = (BehaviorModel.get_current_vaccine_effectiveness(individual.vaccine_effectiveness, individual.days_since_vaccination))
 
-                probability_of_infection *= (1 - effective_protection) #rimossa virus fraction
+                probability_of_infection *= (1 - effective_protection) 
 
             # Determine if infection occurs
             if probability_of_infection >= random.random():

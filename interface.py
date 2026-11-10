@@ -184,7 +184,7 @@ class SimulationGUI:
             'VACCINATION_TRIGGER': 'When enabled, vaccination status affects transmission probability.',
             'VIRAL_LOAD': 'When enabled, uses "LOIMOS" based infection system, (more realistic and reliable). When disabled, uses "MVT" based infection system(faster). Read the documentation to understand more about this.',
             'ICU_PRESENCE': 'When enabled, includes ICU membrane in the model.',
-            'VACCINE_COVERAGE': 'Percentage of population that is vaccinated from the start of the simulation (0-1).',
+            'VACCINE_COVERAGE': 'Reference fraction of the elderly population to vaccinate during the vaccination campaign.',
             'DURATION_CORRELATION': 'Controls how strongly the vaccine effectiveness is linked to how long it lasts. The higher it is, the more effective and lasting is the vaccine.  (0-1).',
             'F_STAR': 'A reference point that helps determine how people’s willingness to get vaccinated changes based on infection levels. The higher it is, the less willing people are to get vaccinated.(0-1. 0.001 to 0.1 are the suggested values)',
             'QUARANTINE_ENABLED': 'When enabled, quarantine measures are implemented.',
@@ -489,13 +489,13 @@ class SimulationGUI:
                 )
                 error_label.pack(pady=5)
 
-        # All graphs loaded successfully, now we can remove the CSV file
-        try:
-            if os.path.exists(csv_filename):
-                os.remove(csv_filename)
-                print(f"Cleaned up temporary CSV file: {csv_filename}")
-        except Exception as e:
-            print(f"Warning: Could not remove CSV file: {e}")
+        # All graphs loaded successfully, now we can remove the CSV file REMOVED: csv_filename needs weekly csv
+        #try:
+            #if os.path.exists(csv_filename):
+                #os.remove(csv_filename)
+                #print(f"Cleaned up temporary CSV file: {csv_filename}")
+        #except Exception as e:
+            #print(f"Warning: Could not remove CSV file: {e}")
 
         # Switch to the graph tab to show the results
         self.notebook.select(self.graph_tab)
@@ -596,8 +596,7 @@ class SimulationGUI:
             current_datetime = datetime.now().strftime("%Y%m%d_%H%M%S")
             output_file = f"simulations/simulation_parameters___{current_datetime}.txt"
 
-            # Define the CSV output filename for use in both saving and graph display
-            csv_filename = f"simulations/simulation_results___{current_datetime}.csv"
+            
 
             with open(output_file, 'w') as file:
                 file.write("Simulation Parameters:\n")
@@ -635,8 +634,8 @@ class SimulationGUI:
             # Connect to simulation results
             simulation.on_day_completed = update_simulation_output
 
-            # Run the simulation
-            simulation.run_simulation(days=params.SIMULATION_DAYS)
+            # Run the simulation and retrieve the generated weekly CSV path
+            csv_filename = simulation.run_simulation(days=params.SIMULATION_DAYS)
 
             # Add final summary
             self.output_text.insert(tk.END, "\nSimulation completed!\n")
