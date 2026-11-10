@@ -10,10 +10,10 @@ class CurveEvaluator:
 
         target_csvs: dict mapping season label -> csv path, e.g.
             {
-                "2022": "incidence_2022-2023.csv",
-                "2023": "incidence_2023-2024.csv",
-                "2024": "incidence_2024-2025.csv",
-                "2025": "incidence_2025-2026.csv",
+                "2022": "incidence_strain_2022-2023.csv",
+                "2023": "incidence_strain_2023-2024.csv",
+                "2024": "incidence_strain_2024-2025.csv",
+                "2025": "incidence_strain_2025-2026.csv",
             }
         """
         self.targets = {
@@ -35,7 +35,7 @@ class CurveEvaluator:
 
         scores = {}
         for season, target_df in self.targets.items():
-            real = target_df["incidenza"].to_numpy()
+            real = target_df["totale_perc"].to_numpy()
             n = min(len(sim_full), len(real))
             sim = sim_full[:n]
             real_n = real[:n]
