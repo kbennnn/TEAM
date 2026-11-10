@@ -85,13 +85,14 @@ class Simulation:
     INIT_INFECTIONS_PER_PROVINCE = int(TOTAL_POPULATION/len(PROVINCES)*0.3/100) 
     YOUNG_PERCENTAGE = 0.2  # Population aged 0-20 years 
     ELDERLY_PERCENTAGE = 0.3  # Population aged 60+ years 
-    
     ADULT_PERCENTAGE = 1 - YOUNG_PERCENTAGE - ELDERLY_PERCENTAGE  # Population aged 21-59 years
+
     GET_HOME_18 = 0.2  # Probability of students returning home at 18:00
     GET_HOME_19 = 0.48  # Probability of students returning home at 19:00
     CERTAINTY_PROBABILITY = 1.0  # Probability representing certainty (100%)
     GET_HOME_ONE_HOUR = 0.4  # Probability of returning home after one hour
     GET_HOME_TWO_HOURS = 0.24  # Probability of returning home after two hours
+    
     QUARANTINE_ENABLED = False  # Whether quarantine policy is active
     QUARANTINE_DURATION = 14  # Number of days quarantine lasts once active
     QUARANTINE_START_DAY = 7  # Days until quarantine policy begins

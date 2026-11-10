@@ -7,6 +7,8 @@ class InfectionRules:
     # Disease progression parameters
     INCUBATION_PERIOD = 2
     HOSPITALIZATION_PERIOD = 7
+    IMMUNITY_PERIOD = 180
+    STRAIN_FACTOR = 0.4 #models the impact of the number of strains on the immunity, can go from 0.33 to 1.0
 
     # Simulation control flags
     BEHAVIOR_TRIGGER = True     # Enable behavioral adaptation based on infection rates
@@ -188,6 +190,12 @@ class InfectionRules:
                 effective_protection = (BehaviorModel.get_current_vaccine_effectiveness(individual.vaccine_effectiveness, individual.days_since_vaccination))
 
                 probability_of_infection *= (1 - effective_protection) 
+
+            # Natural immunity from precedent infection
+            if hasattr(individual, 'immunity_days_left') and individual.immunity_days_left > 0:
+                # The probability of becoming infected is scaled by the immunity of that particular flu strain
+                residual_susceptibility = max(0.0, 1.0 - InfectionRules.STRAIN_FACTOR)
+                probability_of_infection *= residual_susceptibility
 
             # Determine if infection occurs
             if probability_of_infection >= random.random():

@@ -1150,6 +1150,7 @@ class Individual:
         self.incubation_days_left = 0
         self.infection_days_left = 0
         self.vaccination_days_left = 0
+        self.immunity_days_left = 0
         self.province_origin = province_origin
         self.province_destination = province_destination
         self.number = number
@@ -1229,13 +1230,12 @@ class Individual:
             if self.vaccination_days_left <= 0:
                 self.vaccinated = False
                 self.vaccine_effectiveness = 0.0
-
-        '''
-        if self.status == 'Recovered' and self.immunity_days_left > 0:
+        
+        if self.immunity_days_left > 0:
             self.immunity_days_left -= 1
             if self.immunity_days_left == 0:
                 self.status = 'Healthy'
-        '''
+        
 
 
     def start_infection(self):
@@ -1259,6 +1259,7 @@ class Individual:
             self.v1 = 0
             self.inf = 0
             self.symptoms = "E1"
+            self.immunity_days_left = InfectionRules.IMMUNITY_PERIOD
 
     def __repr__(self):
         """

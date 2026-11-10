@@ -21,10 +21,10 @@ def run_one_sim(idx, params: Parameters, days, generation, algorithm, seed = ga_
     weekly_csv = sim.run_simulation(days=days, GPU_idx=idx, generation=generation, algorithm=algorithm)
     # Evaluate result against the 4 seasons, use the "sum" metric for this run
     evaluator = CurveEvaluator({
-        "2022": "lombardy/incidence_2022-2023.csv",
-        "2023": "lombardy/incidence_2023-2024.csv",
-        "2024": "lombardy/incidence_2024-2025.csv",
-        "2025": "lombardy/incidence_2025-2026.csv",
+        "2022": "lombardy/incidence_strain_2022-2023.csv",
+        "2023": "lombardy/incidence_strain_2023-2024.csv",
+        "2024": "lombardy/incidence_strain_2024-2025.csv",
+        "2025": "lombardy/incidence_strain_2025-2026.csv",
     })
     result = evaluator.evaluate(weekly_csv)
     score = result["sum"] #Change into minimax or maxmax for different metrics
