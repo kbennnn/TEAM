@@ -737,10 +737,10 @@ class Simulation:
         )
 
         # Line Chart 3: Week vs Incidence
-        historical_2022_2023 = pd.read_csv("lombardy/incidence_2022-2023.csv")
-        historical_2023_2024 = pd.read_csv("lombardy/incidence_2023-2024.csv")
-        historical_2024_2025 = pd.read_csv("lombardy/incidence_2024-2025.csv")
-        historical_2025_2026 = pd.read_csv("lombardy/incidence_2025-2026.csv")
+        historical_2022_2023 = pd.read_csv("lombardy/incidence_strain_2022-2023.csv")
+        historical_2023_2024 = pd.read_csv("lombardy/incidence_strain_2023-2024.csv")
+        historical_2024_2025 = pd.read_csv("lombardy/incidence_strain_2024-2025.csv")
+        historical_2025_2026 = pd.read_csv("lombardy/incidence_strain_2025-2026.csv")
 
         historical_curves = [
             (historical_2022_2023["progressivo_settimana"], historical_2022_2023["incidenza"], "2022-2023"),

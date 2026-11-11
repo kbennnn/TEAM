@@ -39,7 +39,7 @@ class CurveEvaluator:
             n = min(len(sim_full), len(real))
             sim = sim_full[:n]
             real_n = real[:n]
-            scores[season] = self.mse(sim, real_n)
+            scores[season] = self.weighted_mse(sim, real_n)
 
         sum_score = sum(scores.values())
 
@@ -62,5 +62,47 @@ class CurveEvaluator:
         }
 
     @staticmethod
-    def mse(sim, real):
-        return np.mean((sim - real) ** 2)
+    def weighted_mse(sim, real):
+        """
+        Calculate the balanced epidemic fitness (Weighted MSE + Off-Season Penalty + Peak Penalty).
+        This replaces the simple MSE to avoid flat or zero curves.
+        """
+        sim = np.array(sim)
+        real = np.array(real)
+        n = len(sim)
+        
+        # 1. Weighted MSE
+        weights = np.ones(n)
+        
+        # Off-season weights 50% more
+        off_season_end_idx = min(8, n)
+        off_season_start_idx = min(34, n)
+        
+        weights[:off_season_end_idx] = 1.5
+        weights[off_season_start_idx:] = 1.5
+        
+        # Peak-season weights 100% more
+        peak_start_idx = min(14, n)
+        peak_end_idx = min(26, n)
+        if peak_start_idx < peak_end_idx:
+            weights[peak_start_idx:peak_end_idx] = 2.0
+            
+        weighted_mse = np.sum(weights * ((sim - real) ** 2)) / np.sum(weights)
+        
+        # 2. Background Noise Penalty (Off-Season)
+        off_season_indices = list(range(0, off_season_end_idx)) + list(range(off_season_start_idx, n))
+        if len(off_season_indices) > 0:
+            off_season_mean = np.mean(sim[off_season_indices])
+        else:
+            off_season_mean = 0.0
+            
+        penalty_baseline = 2.0 * (off_season_mean ** 2)  # Adds approx. 0.0 - 0.35
+        
+        # 3. Peak Height Penalty - Proportional to the real target peak
+        max_sim = np.max(sim) if len(sim) > 0 else 0.0
+        max_real = np.max(real) if len(real) > 0 else 0.0
+        
+        penalty_peak = 1.0 * ((max_sim - max_real) ** 2)  # Adds approx. 0.0 - 0.50
+        
+        # Balanced total score - maintains the same numerical range as standard MSE
+        return weighted_mse + penalty_baseline + penalty_peak
