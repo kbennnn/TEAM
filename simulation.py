@@ -80,9 +80,9 @@ class Simulation:
     # Class constants and default parameters
     HIDE_PRINT = True
     PROVINCES = Membrane.PROVINCES
-    TOTAL_POPULATION = 10000
+    TOTAL_POPULATION = 25000
     VACCINE_COVERAGE = 0.55 # Reference elderly vaccination coverage based on recent influenza seasons
-    INIT_INFECTIONS_PER_PROVINCE = int(TOTAL_POPULATION/len(PROVINCES)*0.3/100) 
+    INIT_INFECTIONS_PER_PROVINCE = int(TOTAL_POPULATION/len(PROVINCES)*0.1/100) 
     YOUNG_PERCENTAGE = 0.2  # Population aged 0-20 years 
     ELDERLY_PERCENTAGE = 0.3  # Population aged 60+ years 
     ADULT_PERCENTAGE = 1 - YOUNG_PERCENTAGE - ELDERLY_PERCENTAGE  # Population aged 21-59 years
@@ -743,10 +743,10 @@ class Simulation:
         historical_2025_2026 = pd.read_csv("lombardy/incidence_strain_2025-2026.csv")
 
         historical_curves = [
-            (historical_2022_2023["progressivo_settimana"], historical_2022_2023["incidenza"], "2022-2023"),
-            (historical_2023_2024["progressivo_settimana"], historical_2023_2024["incidenza"], "2023-2024"),
-            (historical_2024_2025["progressivo_settimana"], historical_2024_2025["incidenza"], "2024-2025"),
-            (historical_2025_2026["progressivo_settimana"], historical_2025_2026["incidenza"], "2025-2026" )
+            (historical_2022_2023["progressivo_settimana"], historical_2022_2023["totale_perc"], "2022-2023"),
+            (historical_2023_2024["progressivo_settimana"], historical_2023_2024["totale_perc"], "2023-2024"),
+            (historical_2024_2025["progressivo_settimana"], historical_2024_2025["totale_perc"], "2024-2025"),
+            (historical_2025_2026["progressivo_settimana"], historical_2025_2026["totale_perc"], "2025-2026" )
         ]
 
         create_comparison_line_chart(
