@@ -8,7 +8,7 @@ class InfectionRules:
     INCUBATION_PERIOD = 2
     HOSPITALIZATION_PERIOD = 7
     IMMUNITY_PERIOD = 180
-    STRAIN_FACTOR = 0.4 #models the impact of the number of strains on the immunity, can go from 0.33 to 1.0
+    STRAIN_FACTOR = 0.4 #models the impact of the number of strains on the immunity, can go from 0.33 to 1.0 - better 0.2 / 0.8
 
     # Simulation control flags
     BEHAVIOR_TRIGGER = True     # Enable behavioral adaptation based on infection rates

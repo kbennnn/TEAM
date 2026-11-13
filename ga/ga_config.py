@@ -1,5 +1,5 @@
 # Simulation
-RANDOM_SEED = [42, 999, 1234]
+RANDOM_SEED = [42, 137, 2026, 7919, 98765]
 DAYS = 364
 
 # Population

@@ -36,12 +36,17 @@ def run_one_sim(idx, params: Parameters, days, generation, algorithm, seed = ga_
 
 
 
-def run_repeated(params: Parameters, rep: int, days: int, gen: int = -1, max_workers: int = 3):
-    #Launch the same simulation with generation -1 and 3 different seeds in order to check the variance of the results
+
+def run_multi_seed(params: Parameters, algorithm: str, days: int, rep: int = None, gen: int = -1, max_workers: int = None):
+    # Launch the same simulation in parallel across multiple seeds
+    if rep is None:
+        rep = len(ga_config.RANDOM_SEED)
+    if max_workers is None:
+        max_workers = rep
+
     results = []
     with ProcessPoolExecutor(max_workers=max_workers) as exe:
         futures = []
-        algorithm=""
 
         for idx in range(rep):
             futures.append(
@@ -58,11 +63,7 @@ def run_repeated(params: Parameters, rep: int, days: int, gen: int = -1, max_wor
 
         for future in futures:
             idx, score, elapsed, pid = future.result()
-
-            print(
-                f"Sim {idx}: score={score:.5f}, "
-            )
-
+            print(f"Sim {idx} (seed={ga_config.RANDOM_SEED[idx]}): score={score:.5f}, elapsed={elapsed:.2f}s, pid={pid}")
             results.append((idx, score, elapsed, pid))
 
     return results

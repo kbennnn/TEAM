@@ -10,17 +10,17 @@ import random
 class Parameters:
 
     # InfectionRules
-    hospitalization_prob: float = 0.03
-    v1_growth_prob: float = 0.035
-    antiv_kill_prob: float = 0.001
-    prudence_parameter: float = 0.9
-    antivesp_young_ratio: int = 6
+    hospitalization_prob: float = 0.732
+    v1_growth_prob: float = 0.0486
+    antiv_kill_prob: float = 0.00832
+    prudence_parameter: float = 0.916
+    antivesp_young_ratio: int = 5
     antivesp_adult_ratio: int = 3
     # Viral load thresholds
-    incubation_v1: int = 5
-    infection_v1: int = 200
-    recovered_antivesp: int = 40
-    symptoms_progression: int = 700 
+    incubation_v1: int = 25
+    infection_v1: int = 193
+    recovered_antivesp: int = 28
+    symptoms_progression: int = 677
 
 
     @classmethod #Random constructor inside bounds

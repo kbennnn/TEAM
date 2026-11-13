@@ -1,7 +1,3 @@
-import sys
-import os
-import pandas as pd
-
 # Import ufficiali corretti
 import behavior_model
 from behavior_model import BehaviorModel
@@ -9,23 +5,24 @@ from behavior_model import BehaviorModel
 import simulation
 from simulation import Simulation
 
-from gpu_runner import run_one_sim
+from gpu_runner import run_multi_seed
 from parameters import Parameters
 import ga.ga_config as ga_config
 
 # --- 1. PARAMETRI FISSI DELLA SIMULAZIONE SCELTA ---
 BEST_PARAMS = Parameters.from_dict({
-    "hospitalization_prob": 0.039794085,
-    "v1_growth_prob": 0.038817637,
-    "antiv_kill_prob": 0.007896532,
-    "prudence_parameter": 0.881876167,
-    "antivesp_young_ratio": 7,
-    "antivesp_adult_ratio": 2,
-    "incubation_v1": 12,
-    "infection_v1": 297,
-    "recovered_antivesp": 44,
-    "symptoms_progression": 589,
+    "hospitalization_prob": 0.732,
+    "v1_growth_prob": 0.0486,
+    "antiv_kill_prob": 0.00832,
+    "prudence_parameter": 0.916,
+    "antivesp_young_ratio": 5,
+    "antivesp_adult_ratio": 3,
+    "incubation_v1": 25,
+    "infection_v1": 193,
+    "recovered_antivesp": 28,
+    "symptoms_progression": 677,
 })
+
 
 # --- 2. VALORI BASE DI DEFAULT ---
 DEFAULT_EFF_LOWER = 15.0          # Lower effectiveness bound (%)
@@ -43,7 +40,7 @@ DEFAULT_PROTECTION_DELAY = 14     # Days before vaccine protection begins
 DEFAULT_F_STAR = 0.01             # Infection-rate threshold for vaccination willingness
 
 # Tenere su False finché si settano i parametri, impostare su True per lanciare simulazioni
-RUN_SIMULATIONS = False
+RUN_SIMULATIONS = True
 
 
 def apply_vaccine_config(eff_low=DEFAULT_EFF_LOWER, eff_upp=DEFAULT_EFF_UPPER,
@@ -136,24 +133,12 @@ def print_active_parameters(tag=""):
 # --- 3. DEFINIZIONE DELLE NUOVE RUN PER I 3 GRAFICI COMPARATIVI ---
 
 experiments = [
+    {
+            "name": "baseline",
+            "config": {} #Valori base per poter confrontare
+    },
+        
     # --- GRUPPO 1: VACCINATION WEEKS ---
-
-    #test precedenti:
-    #{
-    #    "name": "weeks_0_13",
-    #    "config": {"eff_low": 15.0, "eff_upp": 65.0, "duration": 210.0, "start_wk": 0, "end_wk": 13}
-    #},
-    #{
-    #    "name": "weeks_16_29",
-    #    "config": {"eff_low": 15.0, "eff_upp": 65.0, "duration": 210.0, "start_wk": 16, "end_wk": 29}
-    #},
-    #{
-    #    "name": "weeks_24_37",
-    #    "config": {"eff_low": 15.0, "eff_upp": 65.0, "duration": 210.0, "start_wk": 24, "end_wk": 37}
-    #},
-
-    #nuove proposte:
-
     # mantenendo fissa la durata totale ma anticipando o posticipando la campagna:
     {
         "name": "weeks_6_19",
@@ -369,16 +354,19 @@ for exp in experiments:
     # 2. Stampa di verifica pre-lancio
     print_active_parameters(tag=exp["name"])
 
-    # 3. Chiamata alla simulazione su GPU
-    idx, score, elapsed, pid = run_one_sim(
-        idx=-1,
+    # 3. Lancio parallelo sui 5 seed
+    results = run_multi_seed(
         params=BEST_PARAMS,
+        algorithm=f"VACCINE_{exp['name']}",
         days=ga_config.DAYS,
-        generation=-1,
-        algorithm=f"VACCINE_{exp['name']}"
+        rep=5,
+        gen=-1,
+        max_workers=5
     )
 
-    print(f"\n[ESITO {exp['name']}] -> Score MSE: {score:.6f} | Tempo: {elapsed:.2f}s | PID: {pid}")
+    mean_score = sum(r[1] for r in results) / len(results)
+    print(f"\n[ESITO {exp['name']}] -> Score MSE medio (5 seed): {mean_score:.6f}")
+
 
 # Ripristino pulito dello stato di default a fine esecuzione
 apply_vaccine_config()
