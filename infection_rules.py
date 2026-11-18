@@ -173,7 +173,7 @@ class InfectionRules:
 
         # Process each susceptible individual
         for individual in individuals:
-            if individual.status != "Healthy":
+            if individual.status not in ("Healthy", "Recovered"):
                 continue
 
             # Calculate infection probability based on local conditions

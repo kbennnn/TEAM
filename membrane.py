@@ -421,6 +421,17 @@ class ProvinceMembrane(Membrane):
                       self.common_areas + self.hospitals + self.ICUs + self.houses):
             place.reduce_vaccine_day()
 
+    def reduce_all_immunity_day(self):
+            """
+            Decrease remaining immunity days for all previously infected individuals.
+    
+            Note:
+                Checks all places for individuals with immunity days remaining
+            """
+            for place in (self.schools + self.workplaces + self.leisure_centers +
+                          self.common_areas + self.hospitals + self.ICUs + self.houses):
+                place.reduce_immunity_day()
+
 
     def update_all_status(self):
         """
@@ -611,6 +622,15 @@ class PlaceMembrane(Membrane):
                 individual.vaccinated = False
                 individual.vaccine_effectiveness = 0.0
                 individual.days_since_vaccination = 0
+
+    def reduce_immunity_day(self):
+        """
+        Reduce immunity days for previously infected individuals.
+        """
+        for individual in self.individuals_inside:
+            if individual.immunity_days_left > 0:
+                individual.immunity_days_left -= 1
+
                 
 
     def update_status(self):
@@ -1254,12 +1274,13 @@ class Individual:
 
     def recover(self):
         self.status = "Recovered"
+        self.immunity_days_left = InfectionRules.IMMUNITY_PERIOD
         if InfectionRules.VIRAL_LOAD:
             self.antivesp = 0
             self.v1 = 0
             self.inf = 0
             self.symptoms = "E1"
-            self.immunity_days_left = InfectionRules.IMMUNITY_PERIOD
+            
 
     def __repr__(self):
         """

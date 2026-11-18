@@ -10,7 +10,7 @@ import random
 class Parameters:
 
     # InfectionRules
-    hospitalization_prob: float = 0.732
+    hospitalization_prob: float = 0.732 #exceed the max range previously chosen
     v1_growth_prob: float = 0.0486
     antiv_kill_prob: float = 0.00832
     prudence_parameter: float = 0.916

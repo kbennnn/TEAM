@@ -367,6 +367,7 @@ class Simulation:
                         if InfectionRules.VIRAL_LOAD:
                             p.reduce_all_hospital_day()  # Reduce hospitalization counters
                             p.reduce_all_vaccine_day()   # Update vaccine effectiveness
+                            p.reduce_all_immunity_day()  # Reduce immunity counters
                         else:
                             p.trigger_infection_progress()  # Simple state progression
 

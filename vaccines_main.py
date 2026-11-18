@@ -11,7 +11,7 @@ import ga.ga_config as ga_config
 
 # --- 1. PARAMETRI FISSI DELLA SIMULAZIONE SCELTA ---
 BEST_PARAMS = Parameters.from_dict({
-    "hospitalization_prob": 0.732,
+    "hospitalization_prob": 0.732, #exceed the max range previously chosen
     "v1_growth_prob": 0.0486,
     "antiv_kill_prob": 0.00832,
     "prudence_parameter": 0.916,
