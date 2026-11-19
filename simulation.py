@@ -104,11 +104,11 @@ class Simulation:
 
     #we assume that the simulation starts on the 33rd week of the InfluNews report, which is the global minimum for flu incidence
     #vaccination campaign starts approximately beginning-mid october, which is approximately week 8 of the simulation
-    VACCINATION_START_WEEK = 8
+    VACCINATION_START_WEEK = 1
     VACCINATION_START_DAY = 7 * (VACCINATION_START_WEEK - 1) + 1
     #vaccination campaign ends approximately with new year's day, which is approximately week 21 of the simulation
-    VACCINATION_END_WEEK = 21
-    VACCINATION_END_DAY = 7*(VACCINATION_END_WEEK)
+    VACCINATION_END_WEEK = 14
+    VACCINATION_END_DAY = 7 * (VACCINATION_END_WEEK)
 
     DAILY_VACCINATION_CAP_FRACTION = 0.01 #max percentage of elderly vaccinated in a single day
 
@@ -370,14 +370,19 @@ class Simulation:
                             p.reduce_all_immunity_day()  # Reduce immunity counters
                         else:
                             p.trigger_infection_progress()  # Simple state progression
-
-                            
+        
                 else:
                     # First day initialization and reporting
                     #print("prudence parameter of", InfectionRules.PRUDENCE_PARAMETER,
                     #      " i have a factor of * ", (1 - InfectionRules.PRUDENCE_PARAMETER)**2)
                     self.currently_infected = self.get_infected_individuals()
                     self.yesterday_infected = len(self.currently_infected)
+
+                # The likelihood of becoming infected falls sharply during hot seasons
+                if day == 175: # week 25
+                    InfectionRules.SUMMER_REDUCTION = 0.5
+                elif day == 210: # week 30
+                    InfectionRules.SUMMER_REDUCTION = 0.9
 
                 # Update quarantine timing counters
                 self.QUARANTINE_START_DAY -= 1

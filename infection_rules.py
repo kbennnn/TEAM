@@ -8,7 +8,7 @@ class InfectionRules:
     INCUBATION_PERIOD = 2
     HOSPITALIZATION_PERIOD = 7
     IMMUNITY_PERIOD = 180
-    STRAIN_FACTOR = 0.4 #models the impact of the number of strains on the immunity, can go from 0.33 to 1.0 - better 0.2 / 0.8
+    
 
     # Simulation control flags
     BEHAVIOR_TRIGGER = True     # Enable behavioral adaptation based on infection rates
@@ -21,9 +21,11 @@ class InfectionRules:
     ICU_PROB = 0.05             # Probability of direct ICU admission with E4 symptoms
 
     # Virus dynamics
-    #CAUTION_FACTOR = 0.1      # Impact of caution on infection spread
+    #CAUTION_FACTOR = 0.1       # Impact of caution on infection spread
     V1_GROWTH_PROB = 0.035      # Probability of viral load growth
     ANTIV_KILL_PROB = 0.001     # Probability of antibodies neutralizing virus
+    STRAIN_FACTOR = 0.6         # Models the impact of the number of strains on the immunity, can go from 0.33 to 1.0 - better 0.2 / 0.8
+    SUMMER_REDUCTION = 0.0      # Reduction in transmissibility during summer days: 0.5 from week 25 and 0.9 from week 30
 
     # Age and symptom-based antibody production probabilities
     # Format: ANTIVESP_[AGE]_[SYMPTOM LEVEL]_PROB
@@ -196,6 +198,9 @@ class InfectionRules:
                 # The probability of becoming infected is scaled by the immunity of that particular flu strain
                 residual_susceptibility = max(0.0, 1.0 - InfectionRules.STRAIN_FACTOR)
                 probability_of_infection *= residual_susceptibility
+
+            # The likelihood of becoming infected falls sharply during hot seasons
+            probability_of_infection *= (1 - InfectionRules.SUMMER_REDUCTION)
 
             # Determine if infection occurs
             if probability_of_infection >= random.random():

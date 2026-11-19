@@ -28,8 +28,8 @@ BEST_PARAMS = Parameters.from_dict({
 DEFAULT_EFF_LOWER = 15.0          # Lower effectiveness bound (%)
 DEFAULT_EFF_UPPER = 65.0          # Upper effectiveness bound (%)
 DEFAULT_DURATION = 210.0          # Mean protection duration (days)
-DEFAULT_START_WEEK = 8            # Campaign start (simulation week)
-DEFAULT_END_WEEK = 21             # Campaign end (simulation week)
+DEFAULT_START_WEEK = 1            # Campaign start (simulation week)
+DEFAULT_END_WEEK = 14             # Campaign end (simulation week)
 
 #aggiunti:
 DEFAULT_COVERAGE = 0.55           # Target fraction of elderly individuals vaccinated
@@ -141,43 +141,33 @@ experiments = [
     # --- GRUPPO 1: VACCINATION WEEKS ---
     # mantenendo fissa la durata totale ma anticipando o posticipando la campagna:
     {
-        "name": "weeks_6_19",
-        "config": {"start_wk": 6, "end_wk": 19} #Da metà settembre a fine dicembre. Motivo: alcune fonti suggeriscono di iniziare la campagna già a settembre,
-        #specialmente se si prevede un picco anticipato
+        "name": "weeks_3_16",
+        "config": {"start_wk": 3, "end_wk": 16} #Da metà ottobre a metà gennaio. Motivo: è un delay di solo 2 settimane rispetto alla baseline e quindi realistico
     },
     {
-        "name": "weeks_10_23",
-        "config": {"start_wk": 10, "end_wk": 23} #Da metà ottobre a metà gennaio. Motivo: è un delay di solo 2 settimane rispetto alla baseline e quindi realistico
-    },
-    {
-        "name": "weeks_12_25",
-        "config": {"start_wk": 12, "end_wk": 25} #Da fine ottobre a inizio febbraio. Motivo: è un delay più importante (un mese) ma comunque nei limiti del realismo.
+        "name": "weeks_5_18",
+        "config": {"start_wk": 5, "end_wk": 18} #Da fine ottobre a inizio febbraio. Motivo: è un delay più importante (un mese) ma comunque nei limiti del realismo.
         # ritardi più grandi rispetto alla baseline possono essere comunque interessanti da studiare, ma sono del tutto irrealistici
     },
 
     # cambiando la durata totale:
     {
-        "name": "weeks_8_15", #fine anticipata
-        "config": {"start_wk": 8, "end_wk": 15} # Motivo: la maggior parte delle persone si vaccinano entro dicembre
+        "name": "weeks_1_8", #fine anticipata
+        "config": {"start_wk": 1, "end_wk": 8} # Motivo: la maggior parte delle persone si vaccinano entro dicembre
                                                 # attenzione che il daily cap è fisso a 1% degli anziani ogni giorno, dunque difficilmente si riuscirà a raggiungere
                                                 #la coverage del 0.55 per gli anziani
     },
     {
-        "name": "weeks_8_29", # fine posticipata
-        "config": {"start_wk": 8, "end_wk": 29} #Motivo: studiare cosa succede se la campagna vaccinale prosegue fino a febbraio
+        "name": "weeks_1_22", # fine posticipata
+        "config": {"start_wk": 1, "end_wk": 22} #Motivo: studiare cosa succede se la campagna vaccinale prosegue fino a febbraio
                                                 # attenzione a due aspetti:
                                                 #1. la coverage massima di 0.55 potrebbe far sì che le vaccinazioni comunque non aumentino dopo un certo giorno
                                                 #2. potrebbero avvenire rivaccinazioni perché gli anziani che si sono vaccinati a inizio campagna potrebbero avere finito la protezione quando
                                                 #   la campagna è ancora in corso e dunque avere una seconda dose
     },
-
     {
-        "name": "weeks_6_21", # inizio anticipato
-        "config": {"start_wk": 6, "end_wk": 21} # Motivo: alcune fonti suggeriscono di iniziare la campagna già a settembre, specialmente se si prevede un picco anticipato
-    },
-    {
-        "name": "weeks_10_21", # inizio posticipato
-        "config": {"start_wk": 10, "end_wk": 21} #Motivo: è un delay di solo 2 settimane rispetto alla baseline e quindi realistico
+        "name": "weeks_3_14", # inizio posticipato
+        "config": {"start_wk": 3, "end_wk": 14} #Motivo: è un delay di solo 2 settimane rispetto alla baseline e quindi realistico
     },
 
 
@@ -328,7 +318,7 @@ experiments = [
 
 # --- 4. ENGINE DI ESECUZIONE ---
 print("==================================================")
-print("   INIZIO NUOVE RUN ESPERIMENTI VACCINI (6 TEST)  ")
+print("   INIZIO NUOVE RUN ESPERIMENTI VACCINI  ")
 print("==================================================")
 
 for exp in experiments:
@@ -371,5 +361,5 @@ for exp in experiments:
 # Ripristino pulito dello stato di default a fine esecuzione
 apply_vaccine_config()
 print("\n==================================================")
-print("     TUTTI I 6 NUOVI TEST SONO STATI COMPLETATI   ")
+print("     TUTTI I TEST SONO STATI COMPLETATI   ")
 print("==================================================")
