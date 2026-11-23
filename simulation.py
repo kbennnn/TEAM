@@ -732,15 +732,15 @@ class Simulation:
         #)
 
         # Line Chart 2: Day vs Incidence
-        create_line_chart(
-            x=data["Day"],
-            y=data["Variation of Infected (%)"],
-            title="Daily Incidence (%)",
-            x_label="Days",
-            y_label="New Infected (%)",
-            base_filename="daily_incidence_line_chart",
-            color="green"
-        )
+        #create_line_chart(
+        #    x=data["Day"],
+        #    y=data["Variation of Infected (%)"],
+        #    title="Daily Incidence (%)",
+        #    x_label="Days",
+        #    y_label="New Infected (%)",
+        #    base_filename="daily_incidence_line_chart",
+        #    color="green"
+        #)
 
         # Line Chart 3: Week vs Incidence
         historical_2022_2023 = pd.read_csv("lombardy/incidence_strain_2022-2023.csv")
@@ -771,10 +771,10 @@ class Simulation:
         #    csv_filename=csv_filename,
         #    algorithm=algorithm
         #)
-        self.write_vaccination_csv(
-            csv_filename=csv_filename,
-            algorithm=algorithm
-        )
+        #self.write_vaccination_csv(
+        #    csv_filename=csv_filename,
+        #    algorithm=algorithm
+        #)
 
         os.remove(csv_filename) #delete the daily csv
 
@@ -1465,7 +1465,7 @@ class Simulation:
                 self.report_target_reached_day = day
 
 
-    def write_vaccination_report(self, csv_filename, algorithm=""):
+    """def write_vaccination_report(self, csv_filename, algorithm=""):
 
         simulation_name = os.path.splitext(
             os.path.basename(csv_filename)
@@ -1708,7 +1708,7 @@ class Simulation:
         print("Vaccination CSV report saved to:", report_filename)
 
         return report_filename
-
+    """
     def record_elderly_status(self, day):
 
         elderly = [
