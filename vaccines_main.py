@@ -6,7 +6,7 @@ from behavior_model import BehaviorModel
 import simulation
 from simulation import Simulation
 
-from gpu_runner import run_one_sim
+from gpu_runner import run_multi_seed
 from parameters import Parameters
 import ga.ga_config as ga_config
 
@@ -342,19 +342,15 @@ experiments = [
     #},
 ]
 
-
 # --- 4. ENGINE DI ESECUZIONE ---
 if __name__ == "__main__":
     print("==================================================")
     print("   INIZIO NUOVE RUN ESPERIMENTI VACCINI (PARALLEL) ")
     print("==================================================")
 
-    seeds = ga_config.RANDOM_SEED[:5]
-    total_workers = len(PARAM_SETS) * len(seeds)  # 3 set * 5 seed = 15 processi paralleli
-
     for exp in experiments:
         print(f"\n==================================================")
-        print(f"  LANCIO SIMULAZIONE: {exp['name']} ({total_workers} run parallele)")
+        print(f"  LANCIO SIMULAZIONE: {exp['name']}")
         print(f"==================================================")
 
         pending = [key for key, value in exp["config"].items() if value is None]
@@ -362,7 +358,7 @@ if __name__ == "__main__":
             print(f"[PENDING] Missing values: {', '.join(pending)}")
             continue
 
-        # 1. Configurazione dei parametri del vaccino (ereditata via fork dai 15 worker)
+        # 1. Configurazione dei parametri del vaccino
         apply_vaccine_config(**exp["config"])
 
         # 2. Stampa di verifica pre-lancio
@@ -372,33 +368,26 @@ if __name__ == "__main__":
             print("[CHECK OK] Parameters applied successfully.")
             continue
 
-        # 3. Lancio parallelo simultaneo: 3 set di parametri x 5 seed = 15 simulazioni insieme
-        scores_by_set = {param_name: [] for param_name in PARAM_SETS}
-
-        with ProcessPoolExecutor(max_workers=total_workers) as exe:
+        # 3. Lancio parallelo dei 3 set, ciascuno tramite run_multi_seed (3 x 5 = 15 worker)
+        with ProcessPoolExecutor(max_workers=len(PARAM_SETS)) as exe:
             futures = {}
-            for param_name, current_params in PARAM_SETS.items():
-                for seed_idx, seed in enumerate(seeds):
-                    fut = exe.submit(
-                        run_one_sim,
-                        seed_idx,
-                        current_params,
-                        ga_config.DAYS,
-                        -1,
-                        f"VACCINE_{param_name}_{exp['name']}",
-                        seed
-                    )
-                    futures[fut] = (param_name, seed_idx, seed)
+            for set_idx, (param_name, current_params) in enumerate(PARAM_SETS.items(), start=1):
+                fut = exe.submit(
+                    run_multi_seed,
+                    params=current_params,
+                    algorithm=f"VACCINE_{param_name}_{exp['name']}",
+                    days=ga_config.DAYS,
+                    rep=5,
+                    gen=-set_idx,  # -1 per set1, -2 per set2, -3 per set3: evita sovrascritture CSV!
+                    max_workers=5
+                )
+                futures[fut] = param_name
 
-            for fut, (param_name, seed_idx, seed) in futures.items():
-                idx, score, elapsed, pid = fut.result()
-                scores_by_set[param_name].append(score)
-                print(f"  [{param_name} | seed={seed} (idx {idx})] -> Score: {score:.6f} | Tempo: {elapsed:.2f}s | PID: {pid}")
-
-        print(f"\n[RIEPILOGO {exp['name']}]")
-        for param_name, scores in scores_by_set.items():
-            mean_score = sum(scores) / len(scores)
-            print(f"  -> {param_name}: Score MSE medio (5 seed) = {mean_score:.6f}")
+            print(f"\n[RIEPILOGO {exp['name']}]")
+            for fut, param_name in futures.items():
+                results = fut.result()
+                mean_score = sum(r[1] for r in results) / len(results)
+                print(f"  -> {param_name}: Score MSE medio (5 seed) = {mean_score:.6f}")
 
     # Ripristino pulito dello stato di default a fine esecuzione
     apply_vaccine_config()
