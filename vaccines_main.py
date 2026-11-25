@@ -1,27 +1,54 @@
 # Import ufficiali corretti
+from concurrent.futures import ProcessPoolExecutor
 import behavior_model
 from behavior_model import BehaviorModel
 
 import simulation
 from simulation import Simulation
 
-from gpu_runner import run_multi_seed
+from gpu_runner import run_one_sim
 from parameters import Parameters
 import ga.ga_config as ga_config
 
 # --- 1. PARAMETRI FISSI DELLA SIMULAZIONE SCELTA ---
-BEST_PARAMS = Parameters.from_dict({
-    "hospitalization_prob": 0.732, #exceed the max range previously chosen
-    "v1_growth_prob": 0.0486,
-    "antiv_kill_prob": 0.00832,
-    "prudence_parameter": 0.916,
-    "antivesp_young_ratio": 5,
-    "antivesp_adult_ratio": 3,
-    "incubation_v1": 25,
-    "infection_v1": 193,
-    "recovered_antivesp": 28,
-    "symptoms_progression": 677,
-})
+PARAM_SETS = {
+    "set1": Parameters.from_dict({ #DE_weekly_simulation_25000_12_364_6_8___20261124_052750.csv
+        "hospitalization_prob": 0.35,
+        "v1_growth_prob": 0.0377,
+        "antiv_kill_prob": 0.0046,
+        "prudence_parameter": 0.784,
+        "antivesp_young_ratio": 6,
+        "antivesp_adult_ratio": 3,
+        "incubation_v1": 11,
+        "infection_v1": 254,
+        "recovered_antivesp": 19,
+        "symptoms_progression": 571,
+    }),
+    "set2": Parameters.from_dict({ #DE_weekly_simulation_25000_12_364_1_8___20261124_003709.csv
+            "hospitalization_prob": 0.26,
+            "v1_growth_prob": 0.0384,
+            "antiv_kill_prob": 0.00469,
+            "prudence_parameter": 0.787,
+            "antivesp_young_ratio": 6,
+            "antivesp_adult_ratio": 3,
+            "incubation_v1": 15,
+            "infection_v1": 256,
+            "recovered_antivesp": 21,
+            "symptoms_progression": 564,
+    }),
+    "set3": Parameters.from_dict({ #DE_weekly_simulation_25000_12_364_4_19___20261124_033216.csv
+                "hospitalization_prob": 0.274,
+                "v1_growth_prob": 0.0413,
+                "antiv_kill_prob": 0.00489,
+                "prudence_parameter": 0.79,
+                "antivesp_young_ratio": 6,
+                "antivesp_adult_ratio": 3,
+                "incubation_v1": 15,
+                "infection_v1": 282,
+                "recovered_antivesp": 24,
+                "symptoms_progression": 571,
+    }),
+}
 
 
 # --- 2. VALORI BASE DI DEFAULT ---
@@ -317,49 +344,64 @@ experiments = [
 
 
 # --- 4. ENGINE DI ESECUZIONE ---
-print("==================================================")
-print("   INIZIO NUOVE RUN ESPERIMENTI VACCINI  ")
-print("==================================================")
+if __name__ == "__main__":
+    print("==================================================")
+    print("   INIZIO NUOVE RUN ESPERIMENTI VACCINI (PARALLEL) ")
+    print("==================================================")
 
-for exp in experiments:
-    print(f"\n==================================================")
-    print(f"  LANCIO SIMULAZIONE: {exp['name']}")
-    print(f"==================================================")
+    seeds = ga_config.RANDOM_SEED[:5]
+    total_workers = len(PARAM_SETS) * len(seeds)  # 3 set * 5 seed = 15 processi paralleli
 
-    # ricordarsi di impostare RUN_SIMULATIONS su True
-    pending = [key for key, value in exp["config"].items() if value is None]
-    if pending:
-        print(f"[PENDING] Missing values: {', '.join(pending)}")
-        continue
+    for exp in experiments:
+        print(f"\n==================================================")
+        print(f"  LANCIO SIMULAZIONE: {exp['name']} ({total_workers} run parallele)")
+        print(f"==================================================")
 
-    if not RUN_SIMULATIONS:
+        pending = [key for key, value in exp["config"].items() if value is None]
+        if pending:
+            print(f"[PENDING] Missing values: {', '.join(pending)}")
+            continue
+
+        # 1. Configurazione dei parametri del vaccino (ereditata via fork dai 15 worker)
         apply_vaccine_config(**exp["config"])
+
+        # 2. Stampa di verifica pre-lancio
         print_active_parameters(tag=exp["name"])
-        print("[CHECK OK] Parameters applied successfully.")
-        continue
 
-    # 1. Configurazione dei parametri
-    apply_vaccine_config(**exp["config"])
+        if not RUN_SIMULATIONS:
+            print("[CHECK OK] Parameters applied successfully.")
+            continue
 
-    # 2. Stampa di verifica pre-lancio
-    print_active_parameters(tag=exp["name"])
+        # 3. Lancio parallelo simultaneo: 3 set di parametri x 5 seed = 15 simulazioni insieme
+        scores_by_set = {param_name: [] for param_name in PARAM_SETS}
 
-    # 3. Lancio parallelo sui 5 seed
-    results = run_multi_seed(
-        params=BEST_PARAMS,
-        algorithm=f"VACCINE_{exp['name']}",
-        days=ga_config.DAYS,
-        rep=5,
-        gen=-1,
-        max_workers=5
-    )
+        with ProcessPoolExecutor(max_workers=total_workers) as exe:
+            futures = {}
+            for param_name, current_params in PARAM_SETS.items():
+                for seed_idx, seed in enumerate(seeds):
+                    fut = exe.submit(
+                        run_one_sim,
+                        seed_idx,
+                        current_params,
+                        ga_config.DAYS,
+                        -1,
+                        f"VACCINE_{param_name}_{exp['name']}",
+                        seed
+                    )
+                    futures[fut] = (param_name, seed_idx, seed)
 
-    mean_score = sum(r[1] for r in results) / len(results)
-    print(f"\n[ESITO {exp['name']}] -> Score MSE medio (5 seed): {mean_score:.6f}")
+            for fut, (param_name, seed_idx, seed) in futures.items():
+                idx, score, elapsed, pid = fut.result()
+                scores_by_set[param_name].append(score)
+                print(f"  [{param_name} | seed={seed} (idx {idx})] -> Score: {score:.6f} | Tempo: {elapsed:.2f}s | PID: {pid}")
 
+        print(f"\n[RIEPILOGO {exp['name']}]")
+        for param_name, scores in scores_by_set.items():
+            mean_score = sum(scores) / len(scores)
+            print(f"  -> {param_name}: Score MSE medio (5 seed) = {mean_score:.6f}")
 
-# Ripristino pulito dello stato di default a fine esecuzione
-apply_vaccine_config()
-print("\n==================================================")
-print("     TUTTI I TEST SONO STATI COMPLETATI   ")
-print("==================================================")
+    # Ripristino pulito dello stato di default a fine esecuzione
+    apply_vaccine_config()
+    print("\n==================================================")
+    print("     TUTTI I TEST SONO STATI COMPLETATI   ")
+    print("==================================================")
